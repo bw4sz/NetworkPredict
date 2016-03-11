@@ -1,0 +1,6 @@
+"","degree","normalised.degree","species.strength","interaction.push.pull","nestedrank","PDI","species.specificity.index","resource.range","PSI","node.specialisation.index.NSI","betweenness","weighted.betweenness","closeness","weighted.closeness","Fisher.alpha","partner.diversity","effective.partners","proportional.similarity","proportional.generality","d"
+"Justicia secunda",1,0.166666666666667,1,0,0.5,1,1,1,1,NA,0,0,0,NA,1677720700.50048,0,1,0.0909090909090909,0.19364383444363,1
+"Kohleria affinis",1,0.166666666666667,0.5,-0.5,0.75,1,1,1,1,1,0,0,0.5,1,1677720700.50048,0,1,0.181818181818182,0.19364383444363,0.5
+"Palicourea demissa",1,0.166666666666667,1,0,1,1,1,1,1,NA,0,0,0,NA,1677720700.50048,0,1,0.0909090909090909,0.19364383444363,1
+"Mezobromelia capituligera",2,0.333333333333333,1.5,0.25,0.25,0.9,0.683130051063973,0.8,1,1,0,0,0.5,1,2.62230229845195,0.636514168294813,1.88988157484231,0.363636363636364,0.36596391479683,0.75
+"Centropogon solanifolius",2,0.333333333333333,2,0.5,0,0.95,0.784856674813943,0.8,1,NA,0,NA,0,NA,1.23549253245909,0.500402423538188,1.64938488846612,0.454545454545455,0.319393214275957,1

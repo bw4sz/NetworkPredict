@@ -1,0 +1,524 @@
+---
+title: "Trait-matching and Resources Simulation"
+author: "Ben Weinstein"
+date: "July 27, 2015"
+output: 
+html_document:
+  keep_md:true
+---
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
+library(reshape2)
+library(chron)
+library(ggplot2)
+library(knitr)
+library(R2jags)
+library(dplyr)
+library(stringr)
+library(gridExtra)
+library(boot)
+library(picante)
+library(bipartite)
+
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=4,echo=TRUE,cache=FALSE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
+
+set.seed(3)
+#source functions
+
+source("Bayesian/BayesFunctions.R")
+```
+
+#Simulation   
+
+I first create data with constant detection for each hummingbird species, and the interaction frequency is a function of a species hierarchical model and corolla similarity * resource availability. There is uneven sampling among species.
+
+### Parameters
+
+* 10 hummingbird species
+* Range of hummingbird bill sizes (mm) ~ Pois(2)
+* Twenty plants
+* Range of corolla sizes (mm) ~ Pois(2)
+* Mean frequent ($\lambda$) for each hummingbird is drawn from U(0,10)  
+* Trait matching (minimizing Bill-Corolla difference) is drawn from a 
+hierarchical distribution
+
+$$log(\lambda_{i,j,k})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_j) * \beta_2 * Resources_k + \beta_3 * Resources_k * abs(Bill_i - Corolla_j) $$
+
+$$\alpha=N(4,.01)$$
+$$\beta_1 = N(-.01,.001)$$
+
+Increased occurrence with resources
+$$\beta_2 = N(.5,.001)$$
+
+The strength of trait matching increases with available resources
+$$\beta_3 = N(-.5,.001)$$
+
+* 24 month replicates
+* Phenology = .5 (plants are in flower/present .5 of surveys)
+* Flower availability is log normally distribution (mu=20)
+
+**View simulated strength and form of trait matching **
+
+```{r,fig.height=5,fig.width=8}
+#function that can be used to test different parameters
+sim<-function(gamma1,gamma2,gamma3){
+
+#Number of hummingbird species
+h_species=10
+plant_species=20
+months=50
+detection=runif(h_species,.999,1)
+phenology=1
+
+#Bill sizes
+Bill<-rpois(h_species,10)
+
+#Corolla sizes
+Corolla<-rpois(plant_species,15)
+
+#Subtract both and take absolute value
+traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
+
+#fill out for each month
+traitarray<-array(NA,dim=c(h_species,plant_species,months))
+#fill for each month
+for (x in 1:months){
+  traitarray[,,x]<-traitmatch 
+}
+
+#simulate some poisson distributed resource counts for each replicate
+#this will be same for each species to start with.
+resources<-array(NA,dim=c(h_species,plant_species,months))
+
+#fill for each month
+for (x in 1:months){
+  resources[,,x]<-rpois(1,10)  
+}
+
+#standardize predictors
+
+resources<-array(data=scale(resources),dim=c(h_species,plant_species,months))
+#traitarray<-array(data=scale(traitarray),dim=c(h_species,plant_species,months))
+
+#regression slope for trait-matching and resources
+#trait match
+#gamma=-0.5
+intercept<-4
+sigma_slope1<- 0.1
+sigma_intercept<- 0.1
+
+#resources
+#gamma2=0
+sigma_slope2<- 0.1
+
+#resources * traitmatch
+#gamma3=0
+sigma_slope3<- 0.1
+
+#loop through each species and plants
+
+#draw values from hierarcichal distributions
+beta1<-rnorm(h_species,gamma1,sigma_slope1)
+beta2<-rnorm(h_species,gamma2,sigma_slope2)
+beta3<-rnorm(h_species,gamma3,sigma_slope3)
+
+alpha<-rnorm(h_species,intercept,sigma_intercept)
+
+#fit regression
+lambda<-exp(alpha + beta1 * traitarray + beta2 * resources + beta3 * resources * traitarray)
+
+true_interactions<-array(data=sapply(lambda,function(x){rpois(1,lambda=x)}),dim=c(h_species,plant_species,months))
+
+#combine and melt into a single datafFrame
+mdat<-dcast(melt(list(y=true_interactions,traitmatch=traitarray,resources=resources)),Var1+Var2+Var3~L1)
+return(mdat)}
+```
+
+Simulate a variety of patterns to understand the relationship among the variables
+
+1. Species interactions are based solely on trait matching. No effect of resources and no interaction effect.
+
+```{r}
+mdat<-sim(-.5,0,0)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=2)
+```
+
+2. Species interactions are based on similarity in morphology and abundance of resources, without an interaction. As resources increase, species interact more with all resources. Red on top, blue on the bottom.
+
+```{r}
+mdat<-sim(-1,-.5,0)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=2)
+```
+
+
+3. Species interactions are based on similarity in morphology and abundance of resources, without an interaction. As resources decrease, species interact more with all resources. Blue on top, red on the bottom.
+
+```{r}
+mdat<-sim(-1,-.5,0)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=2)
+```
+
+4. Species interactions are based on similarity in morphology and abundance of resources, with an interaction. As resources increase, hummingbirds interact **more** with plants that match their bill length.
+
+```{r}
+mdat<-sim(-.5,0,.5)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=2)
+```
+
+5. Species interactions are based on similarity in morphology and abundance of resources, with an interaction.As resources increase, hummingbirds interact **less** with plants that match their bill length.
+
+```{r}
+mdat<-sim(-.1,0,-.5)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=2)
+```
+
+For this manuscript we are most interested in the interaction effect. Let's look at that estimate for each of the cases we just outlined.
+
+```{r}
+sim1<-sim(.5,0,0)
+sim2<-sim(.5,.5,0)
+sim3<-sim(.5,-.5,0)
+sim4<-sim(.5,0,.5)
+sim5<-sim(.5,0,-.5)
+sims<-list(sim1,sim2,sim3,sim4,sim5)
+names(sims)<-as.character(1:5)
+
+s<-melt(sims,id.vars=colnames(sim1))
+modlist<-list()
+for (x in 1:length(sims)){
+mod<-glm(data=sims[[x]],y~resources*traitmatch,family="poisson")
+cond<-mod$coefficients[3] + mod$coefficients[4] * mod$data$traitmatch
+d<-data.frame(R_effect=cond,traitmatch=mod$data$traitmatch,model=x)
+modlist[[x]]<-d
+}
+modlist<-rbind_all(modlist)
+ggplot(modlist,aes(x=traitmatch,y=R_effect,col=as.factor(model))) + geom_line() + labs(col="Model",x="Difference in Bill and Corolla Length",y="Effect of resources on trait-matching") + geom_point() + theme_bw()
+```
+
+* Model 1: Increased resources has no effect on trait-matching
+* Model 2: Increased resources has no effect on trait-matching
+* Model 3: Increased resources has no effect on trait-matching
+* Model 4: As resources increase, hummingbirds interact **more** with plants that match their bill length. 
+* Model 5: As resources increase, hummingbirds interact **less** with plants that match their bill length. 
+
+
+#Simulate Model 4
+
+
+```{r,fig.width=11,fig.height=4}
+##Simulate Interactions
+h_species=10
+plant_species=20
+months=24
+phenology=1
+
+#Bill sizes
+Bill<-rpois(h_species,10)
+
+#Corolla sizes
+Corolla<-rpois(plant_species,15)
+
+#Subtract both and take absolute value
+traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
+
+#fill out for each month
+traitarray<-array(NA,dim=c(h_species,plant_species,months))
+#fill for each month
+for (x in 1:months){
+  traitarray[,,x]<-traitmatch 
+}
+
+#simulate some poisson distributed resource counts for each replicate
+#this will be same for each species to start with.
+resources<-array(NA,dim=c(h_species,plant_species,months))
+
+#fill for each month
+for (x in 1:months){
+  resources[,,x]<-rlnorm(1,4)  
+}
+
+#standardize predictors
+
+resources<-array(data=scale(resources),dim=c(h_species,plant_species,months))
+#traitarray<-array(data=scale(traitarray),dim=c(h_species,plant_species,months))
+
+#regression slope for trait-matching and resources
+#trait match
+gamma1=.5
+intercept<-3
+sigma_slope1<- 0.01
+sigma_intercept<- 0.01
+
+#resources
+gamma2=0
+sigma_slope2<- 0.01
+
+#resources * traitmatch
+gamma3=.5
+sigma_slope3<- 0.01
+
+#draw values from hierarcichal distributions
+beta1<-rnorm(h_species,gamma1,sigma_slope1)
+beta2<-rnorm(h_species,gamma2,sigma_slope2)
+beta3<-rnorm(h_species,gamma3,sigma_slope3)
+
+alpha<-rnorm(h_species,intercept,sigma_intercept)
+
+#fit regression
+lambda<-exp(alpha + beta1 * traitarray + beta2 * resources + beta3 * resources * traitarray)
+
+true_interactions<-array(data=sapply(lambda,function(x){rpois(1,x)}),dim=c(h_species,plant_species,months))
+
+#combine and melt into a single datafFrame
+mdat<-dcast(melt(list(y=true_interactions,traitmatch=traitarray,resources=resources)),Var1+Var2+Var3~L1)
+
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red")
+```
+
+# Create biased detection rates
+
+```{r,fig.width=7}
+#For each species loop through and create a replicate dataframe
+obs<-array(dim=c(h_species,plant_species,months))
+
+#Which months are plants in bloom?
+#This is the phenology matrix
+sampled<-replicate(plant_species,rbinom(months,1,phenology))
+sampled[sampled==0]<-NA
+
+for(x in 1:h_species){
+  for (y in 1:plant_species){
+    
+    #True State
+    ts<-true_interactions[x,y,]
+    
+    #detections and phenology
+    obs[x,y,]<-ts *sampled[,y]
+    }
+  }
+
+#plot observed state
+obs.state<-melt(obs)
+colnames(obs.state)<-c("Hummingbird","Plant","Month","Detections")
+
+#turn NA's to 0
+#obs.state$Detections[is.na(obs.state$Detections)]<-0
+
+obs.state$Hummingbird<-as.factor(obs.state$Hummingbird)
+obs.state$Plant<-factor(obs.state$Plant,levels=1:plant_species)
+
+### True Interaction Matrix
+
+colnames(mdat)<-c("Hummingbird","Plant","Month","resources","traitmatch","y")
+trueplot<-ggplot(mdat,aes(y=as.factor(Plant),x=as.factor(Hummingbird),fill=y)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") +  scale_fill_continuous(low="white",high="red","Occurrences")
+trueplot
+```
+
+
+### Model Fitting
+
+$$ Y_{i,j,k} \sim Pois(\lambda_{i,j,k}) $$
+
+$$log(\lambda_{i,j,k})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_j) * \beta_2 * Resources_k + \beta_3 * Resources_k * abs(Bill_i - Corolla_j) $$
+
+**Priors**
+
+$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
+$$\beta_{1,i} \sim N(\gamma_1i,\tau_{\beta_1})$$
+$$\beta_{2,i} \sim N(\gamma_2i,\tau_{\beta_2})$$
+$$\beta_{3,i} \sim N(\gamma_3i,\tau_{\beta_3})$$
+
+**Hyperpriors**
+
+Group Level Means
+
+$$\gamma_{1,i} \sim N(0.001,0.001)$$
+$$\gamma_{2,i} \sim N(0.001,0.001)$$
+$$\gamma_{3,i} \sim N(0.001,0.001)$$
+$$ intercept \sim N(0.001,0.001)$$
+
+Group Level Variance
+
+$$\tau_{\alpha} \sim Gamma(0.001,0.001)$$
+$$\tau_\beta1 \sim Gamma(0.001,0.001)$$
+$$\tau_\beta2 \sim Gamma(0.001,0.001)$$
+$$\tau_\beta3 \sim Gamma(0.001,0.001)$$
+
+**Derived quantities**
+
+$$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
+$$\sigma_{slope1} = \frac{1}{\tau_{\beta_1}}^2$$
+$$\sigma_{slope2} = \frac{1}{\tau_{\beta_2}}^2$$
+$$\sigma_{slope3} = \frac{1}{\tau_{\beta_3}}^2$$
+
+##Hierarcichal Bayesian Model
+
+```{r,eval=T,strip.white=T}
+
+#Source model
+source("Bayesian/Poisson.R")
+
+#print model
+writeLines(readLines("Bayesian/Poisson.R"))
+
+#Input Data
+Dat <- list(
+  Y=obs,
+  Birds=dim(obs)[1],
+  Plants=dim(obs)[2],
+  Months=dim(obs)[3],
+  resources=resources,
+  traitmatch=traitarray)
+
+#A blank Y matrix - all present
+initY<-array(dim=c(Dat$Birds,Dat$Plants,Dat$Months),data=max(obs,na.rm=T))
+initB<-as.numeric(matrix(nrow=h_species,ncol=1,data=.1))
+
+#Inits
+InitStage <- function(){list(beta1=initB,beta2=initB,beta3=initB,alpha=rep(.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta1=0.1,tau_beta2=0.1,tau_beta3=0.1,gamma1=0,gamma2=0,gamma3=0)}
+
+#Parameters to track
+ParsStage <- c("alpha","beta1","beta2","beta3","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3","gamma1","gamma2","gamma3","Y")
+
+#MCMC options
+
+ni <- 5000  # number of draws from the posterior
+nt <- max(c(1,ni*.0001))  #thinning rate
+nb <- ni*.85 # number to discard for burn-in
+nc <- 2  # number of chains
+
+#Jags
+
+m = jags(inits=InitStage,
+         n.chains=nc,
+         model.file="Bayesian/Poisson.jags",
+         working.directory=getwd(),
+         data=Dat,
+         parameters.to.save=ParsStage,
+         n.thin=nt,
+         n.iter=ni,
+         n.burnin=nb,
+         DIC=T)
+```
+
+```{r}
+pars<-extract_par(m)
+```
+
+###Assess Convergence
+
+```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
+
+###Chains
+ggplot(pars[pars$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+
+```
+
+```{r,fig.height=5,fig.width=11,eval=T}
+ggplot(pars[pars$par %in% c("gamma1","gamma2","gamma3","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+```
+
+###Posteriors
+
+```{r,cache=FALSE,fig.width=7,fig.height=13}
+###Posterior Distributions
+p<-ggplot(pars[pars$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+
+#Add true values
+tr<-melt(data.frame(species=1:h_species,alpha=alpha,beta1=beta1,beta2=beta2,beta3=beta3),id.var='species')
+colnames(tr)<-c("species","par","value")
+psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+#ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
+```
+
+```{r,cache=FALSE,eval=TRUE,fig.height=13,fig.width=10}
+
+p<-ggplot(pars[pars$par %in% c("gamma1","gamma2","gamma3","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+
+#Add true values
+tr<-melt(list(gamma1=gamma1,gamma2=gamma2,gamma3=gamma3,intercept=intercept,sigma_int=sigma_intercept,sigma_slope1=sigma_slope1,sigma_slope2=sigma_slope2,sigma_slope3=sigma_slope3))
+
+colnames(tr)<-c("value","par")
+
+psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
+#ggsave("Figures/SimulationH.jpg",dpi=300,height=4,width=10)
+grid.arrange(psim,psim2,heights=c(.6,.4))
+```
+
+****
+<span style="color:red; font-size=25" >True values are the dashed lines</span>
+
+###Predicted Relationship 
+
+```{r,fig.height=4,fig.width=4}
+
+castdf<-dcast(pars[pars$par %in% c("gamma1","gamma2","gamma3","intercept"),], Chain + Draw~par,value.var="estimate")
+
+trajF<-function(alpha,beta1,beta2,beta3,x,resources){
+  indat<-data.frame(alpha,beta1,beta2,beta3)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  
+  for (y in 1:nrow(indat)){
+    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
+    
+    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
+  }
+  
+  sample_all<-rbind_all(sampletraj)
+  
+  #Compute CI intervals
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
+}
+
+#calculate interactions
+
+intF<-function(alpha,beta1,beta2,beta3,x,resources){
+  indat<-data.frame(alpha,beta1,beta2,beta3)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  
+  for (y in 1:nrow(indat)){
+    v=indat$beta2[y] + indat$beta3[y]  * x
+    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
+  }
+  
+  sample_all<-rbind_all(sampletraj)
+  
+  #Compute CI intervals
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
+}
+```
+
+Calculated predicted y
+
+```{r}
+
+predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitarray),resources=resources,beta2=castdf$gamma2,beta3=gamma3)
+
+orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta1=rnorm(2000,gamma1,sigma_slope1),beta2=rnorm(2000,gamma2,sigma_slope2),beta3=rnorm(2000,gamma3,sigma_slope3),x=as.numeric(traitarray),resources=resources)
+
+#plot and compare to original data
+psim3<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1)+ xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=y))
+
+psim3
+#ggsave("Figures/SimulationResults.jpg",height=5,width=6,dpi=300)
+```
+
+Using our model we were able to accurately capture the simulated values.
+
+###Visualize interactions
+
+```{r}
+predyint<-intF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitarray),resources=resources,beta2=castdf$gamma2,beta3=gamma3)
+
+origint<-intF(alpha=rnorm(2000,intercept,sigma_intercept),beta1=rnorm(2000,gamma1,sigma_slope1),beta2=rnorm(2000,gamma2,sigma_slope2),beta3=rnorm(2000,gamma3,sigma_slope3),x=as.numeric(traitarray),resources=resources)
+
+#plot and compare to original data
+psim4<-ggplot(data=predyint,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3,fill="red") + theme_bw() + ylab("Interactions") + geom_line(data=origint,aes(x=x,y=mean),col='black',size=1) + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + xlab("Difference between Bill and Corolla Length") 
+
+psim4
+```
+

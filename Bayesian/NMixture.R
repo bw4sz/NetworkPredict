@@ -1,0 +1,60 @@
+sink("Bayesian/Nmixture.jags")
+
+cat(
+  "
+  model {
+  for (x in 1:Birds){
+    for (y in 1:Plants){
+      for (z in 1:Months){
+       log(lambda[x,y,z]) <- alpha[x] + beta1[x] * traitmatch[x,y,z] + beta2[x] * resources[x,y,z] + beta3[x] * resources[x,y,z] * traitmatch[x,y,z]
+        N[x,y,z] ~ dpois(lambda[x,y,z])
+        Y[x,y,z] ~ dbin(detect[x],N[x,y,z])
+  
+  #Fit discrepancy statistics
+  #eval[i,j,k]<-detect[i]*lambda[x,y,z]
+  #E[i,j,k]<-pow((Y[i,j,k]-eval[i,j,k]),2)/(eval[i,j,k]+0.5)
+  
+  #y.new[i,j,k]~dpois(lambda[x,y,z])
+  #E.new[i,j,k]<-pow((y.new[i,j,k]-eval[i,j,k]),2)/(eval[i,j,k]+0.5)
+  }
+  }
+  }
+  
+  
+  for (i in 1:Birds){
+  detect[i] ~ dunif(0,1) # Detection for each bird species
+  beta1[i] ~ dnorm(gamma1,tau_beta1)
+  beta2[i] ~ dnorm(gamma2,tau_beta2)
+  beta3[i] ~ dnorm(gamma3,tau_beta3)
+  alpha[i] ~ dnorm(intercept,tau_alpha)
+  }
+  
+  
+  #Hyperpriors
+  #Slope grouping
+  gamma1~dnorm(0.001,0.001)
+  gamma2~dnorm(0.001,0.001)
+  gamma3~dnorm(0.001,0.001)
+  
+  #Intercept grouping
+  intercept~dnorm(0.001,0.001)
+  
+  # Group variance
+  tau_alpha ~ dgamma(0.0001,0.0001)
+  sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantity
+  
+  #Slope
+  tau_beta1 ~ dgamma(0.0001,0.0001)
+  tau_beta2 ~ dgamma(0.0001,0.0001)
+  tau_beta3 ~ dgamma(0.0001,0.0001)
+  
+  
+  sigma_slope1<-pow(1/tau_beta1,0.5)
+  sigma_slope2<-pow(1/tau_beta2,0.5)
+  sigma_slope3<-pow(1/tau_beta3,0.5)
+  
+  }
+  ",fill = TRUE
+)
+
+sink()

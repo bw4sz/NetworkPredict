@@ -1,0 +1,73 @@
+
+sink("Bayesian/LogN.jags")
+
+cat("
+    model {
+    
+    for (i in 1:Birds){
+    for (j in 1:Plants){
+    for (k in 1:Times){
+    #Process Model
+    mu[i,j,k]<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * Traitmatch[i,j] * resources[i,j,k]
+    }
+    }
+    }
+    
+    for (x in 1:Nobs){
+    
+    # Covariates for observed state   
+    Yobs[x] ~ dnorm(mu[Bird[x],Plant[x],Time[x]],tau_obs)    
+    
+    #Assess Model Fit
+    
+    #Fit discrepancy statistics
+    eval[x]<-mu[Bird[x],Plant[x],Time[x]]
+    E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
+    
+    ynew[x]~dnorm(mu[Bird[x],Plant[x],Time[x]],tau_obs)
+    E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
+    
+    }
+    
+    for (i in 1:Birds){
+    alpha[i] ~ dnorm(intercept,tau_alpha)
+    beta1[i] ~ dnorm(gamma1,tau_beta1)
+    beta2[i] ~ dnorm(gamma2,tau_beta2)    
+    beta3[i] ~ dnorm(gamma3,tau_beta3)    
+    }
+    
+    #Hyperpriors
+    #Slope grouping
+    gamma1~dnorm(0,0.0001)
+    gamma2~dnorm(0,0.0001)
+    gamma3~dnorm(0,0.0001)
+    
+    #Intercept grouping
+    intercept~dnorm(0,0.0001)
+    
+    # Group intercept variance
+    tau_alpha ~ dgamma(0.0001,0.0001)
+    sigma_int<-pow(1/tau_alpha,0.5) 
+    
+     #Observation variance, turning precision to sd
+    tau_obs ~ dgamma(0.0001,0.0001)
+    sigma_obs<-pow(1/tau_obs,0.5)
+    
+    #Slope variance, turning precision to sd
+    tau_beta1 ~ dgamma(0.0001,0.0001)
+    sigma_slope1<-pow(1/tau_beta1,0.5)
+    
+    tau_beta2 ~ dgamma(0.0001,0.0001)
+    sigma_slope2<-pow(1/tau_beta2,0.5)
+    
+    tau_beta3 ~ dgamma(0.0001,0.0001)
+    sigma_slope3<-pow(1/tau_beta3,0.5)
+    
+    #derived posterior check
+    fit<-sum(E[]) #Discrepancy for the observed data
+    fitnew<-sum(E.new[])
+    
+    }
+    ",fill=TRUE)
+
+sink()

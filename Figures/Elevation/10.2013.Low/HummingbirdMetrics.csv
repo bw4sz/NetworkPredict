@@ -1,0 +1,5 @@
+"","degree","normalised.degree","species.strength","interaction.push.pull","nestedrank","PDI","resource.range","species.specificity.index","PSI","node.specialisation.index.NSI","betweenness","weighted.betweenness","closeness","weighted.closeness","Fisher.alpha","partner.diversity","effective.partners","proportional.generality","proportional.similarity","d"
+"Booted Racketail",3,0.6,2.28571428571429,0.428571428571429,0,0.75,0.5,0.485912657903775,0.761904761904762,1,0,0,0.5,0.571428571428571,2.38771671927057,1.01140426470735,2.74945927399721,0.725960229772383,0.619047619047619,0.421844363667865
+"Sparkling Violetear",1,0.2,0.714285714285714,-0.285714285714286,0.333333333333333,1,1,1,0.714285714285714,1,0,0,0.5,1.42857142857143,0.375882883682592,0,1,0.264037455160036,0.5,0.611791446259226
+"Tawny-bellied Hermit",1,0.2,1,0,0.666666666666667,1,1,1,1,NA,0,NA,0,NA,0.795926633452104,0,1,0.264037455160036,0.142857142857143,1
+"Buff-tailed Coronet",1,0.2,1,0,1,1,1,1,1,NA,0,NA,0,NA,1677720700.50048,0,1,0.264037455160036,0.0714285714285714,1
