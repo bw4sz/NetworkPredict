@@ -1,35 +1,8 @@
----
-title: "Trait-matching and Resources Simulation"
-author: "Ben Weinstein"
-date: "3/11/2016"
-output: 
-  html_document:
-    toc: true
-    number_sections: true
-    theme: spacelab
-    keep_md: true
----
+# Trait-matching and Resources Simulation
+Ben Weinstein  
+3/11/2016  
 
-```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
-library(reshape2)
-library(chron)
-library(ggplot2)
-library(knitr)
-library(R2jags)
-library(dplyr)
-library(stringr)
-library(gridExtra)
-library(boot)
-library(picante)
-library(bipartite)
 
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=12,fig.height=4,echo=TRUE,cache=FALSE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
-
-set.seed(3)
-#source functions
-
-source("Bayesian/BayesFunctions.R")
-```
 
 #Rationale
 
@@ -68,7 +41,8 @@ $$log(\lambda_{i,j,k})<-\alpha_i + \beta_i * |Bill_i - Corolla_j| * \beta_2 * Ab
 * 24 month replicates
 * Flower availability is log normally distribution (mu=20)
 
-```{r,fig.height=5,fig.width=8}
+
+```r
 #function that can be used to test different parameters
 sim<-function(gamma1,gamma2,gamma3){
 
@@ -157,42 +131,58 @@ For each of these scenerios, let's simulate some data to view what the model wou
 
 ## Species interactions are based solely on trait matching. No effect of resources and no interaction effect.
 
-```{r}
+
+```r
 mdat<-sim(-.5,0,0)
 ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson")) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=1)
 ```
 
+<img src="figure/unnamed-chunk-3-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ## Species interactions are based on similarity in morphology and abundance of resources, without an interaction. As resources increase, species interact more with all resources. Red points on top, blue on the bottom.
 
-```{r}
+
+```r
 mdat<-sim(-0.5,1,0)
 ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=1)
 ```
 
+<img src="figure/unnamed-chunk-4-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ## Species interactions are based on similarity in morphology and abundance of resources, without an interaction. As resources decrease, species interact more with all resources. Blue on top, red on the bottom.
 
-```{r}
+
+```r
 mdat<-sim(-0.5,-1,0)
 ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=1)
 ```
 
+<img src="figure/unnamed-chunk-5-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ## Species interactions are based on similarity in morphology and abundance of resources, with an interaction. As resources increase, hummingbirds interact **more** with plants that match their bill length.
 
-```{r}
+
+```r
 mdat<-sim(-0.5,0,-0.5)
 ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=1)
 ```
 
+<img src="figure/unnamed-chunk-6-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ## Species interactions are based on similarity in morphology and abundance of resources, with an interaction.As resources increase, hummingbirds interact **less** with plants that match their bill length.
 
-```{r}
+
+```r
 mdat<-sim(.1,0,.5)
 ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Resource Poor","","Resource Rich")) + facet_wrap(~Var1,nrow=1)
 ```
 
+<img src="figure/unnamed-chunk-7-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 Let's look at that estimate for each of the cases we just outlined.
 
-```{r}
+
+```r
 sim1<-sim(.5,0,0)
 sim2<-sim(.5,1,0)
 sim3<-sim(.5,-1,0)
@@ -213,6 +203,8 @@ modlist<-rbind_all(modlist)
 ggplot(modlist,aes(x=traitmatch,y=R_effect,col=as.factor(model))) + geom_line() + labs(col="Model",x="Difference in Bill and Corolla Length",y="Effect of resources on trait-matching") + geom_point() + theme_bw()
 ```
 
+<img src="figure/unnamed-chunk-8-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 * Model 1: Increased resources has no effect on trait-matching
 * Model 2: Increased resources has positive effect on visitation
 * Model 3: Increased resources has negative effect on visitation
@@ -225,7 +217,8 @@ ggplot(modlist,aes(x=traitmatch,y=R_effect,col=as.factor(model))) + geom_line() 
 Let's simulate Model 5 and add in unequal detection rates for each species.
 
 
-```{r,fig.width=11,fig.height=4}
+
+```r
 ##Simulate Interactions
 h_species=3
 plant_species=10
@@ -265,7 +258,7 @@ resources<-array(data=scale(resources),dim=c(h_species,plant_species,months))
 #regression slope for trait-matching and resources
 #trait match
 gamma1=.5
-intercept<-2
+intercept<-3
 sigma_slope1<- 0.1
 sigma_intercept<- 0.1
 
@@ -274,7 +267,7 @@ gamma2=0
 sigma_slope2<- 0.1
 
 #resources * traitmatch
-gamma3=0.5
+gamma3=1
 sigma_slope3<- 0.1
 
 #draw values from hierarcichal distributions
@@ -295,13 +288,14 @@ mdat<-dcast(melt(list(y=true_interactions,traitmatch=traitarray,resources=resour
 ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Available Resources") + scale_color_continuous(low="blue",high="red")
 ```
 
+<img src="figure/unnamed-chunk-9-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ## Create biased detection rates
 
-```{r,fig.width=7}
+
+```r
 #For each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,months))
-
-detection= runif(h_species,0,0.5)
 
 #Which months are plants in bloom?
 #This is the phenology matrix
@@ -335,6 +329,8 @@ colnames(mdat)<-c("Hummingbird","Plant","Month","resources","traitmatch","y")
 trueplot<-ggplot(mdat,aes(y=as.factor(Plant),x=as.factor(Hummingbird),fill=y)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") +  scale_fill_continuous(low="white",high="red","Visits")
 trueplot
 ```
+
+<img src="figure/unnamed-chunk-10-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
 ### Model Fitting
@@ -375,14 +371,68 @@ $$\sigma_{slope3} = \frac{1}{\tau_{\beta_3}}^2$$
 
 #Hierarcichal Bayesian Model
 
-```{r,eval=T,strip.white=T}
 
+```r
 #Source model
 source("Bayesian/Poisson.R")
 
 #print model
 writeLines(readLines("Bayesian/Poisson.R"))
+```
 
+```
+## 
+## sink("Bayesian/Poisson.jags")
+## 
+## cat("
+##     model {
+##     for (i in 1:Birds){
+##     for (j in 1:Plants){
+##     for (k in 1:Months){
+##     
+##     # True state model for the only partially observed true state    
+##     log(lambda[i,j,k])<- alpha[i] + beta1[i] * traitmatch[i,j,k] + beta2[i] * resources[i,j,k] + beta3[i] * resources[i,j,k] * traitmatch[i,j,k]
+##     Y[i,j,k] ~ dpois(lambda[i,j,k])
+##     }
+##     }
+##     }
+##     
+##     for (i in 1:Birds){
+##     alpha[i] ~ dnorm(intercept,tau_alpha)
+##     beta1[i] ~ dnorm(gamma1,tau_beta1)    
+##     beta2[i] ~ dnorm(gamma2,tau_beta2)    
+##     beta3[i] ~ dnorm(gamma3,tau_beta3)    
+##     }
+##     
+##     #Hyperpriors
+##     #Slope grouping
+##     gamma1~dnorm(0.001,0.001)
+##     gamma2~dnorm(0.001,0.001)
+##     gamma3~dnorm(0.001,0.001)
+##     
+##     #Intercept grouping
+##     intercept~dnorm(0.001,0.001)
+##     
+##     # Group variance
+##     tau_alpha ~ dgamma(0.0001,0.0001)
+##     sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantity
+##     
+##     #Slope
+##     tau_beta1 ~ dgamma(0.0001,0.0001)
+##     tau_beta2 ~ dgamma(0.0001,0.0001)
+##     tau_beta3 ~ dgamma(0.0001,0.0001)
+##     
+##     sigma_slope1<-pow(1/tau_beta1,0.5)
+##     sigma_slope2<-pow(1/tau_beta2,0.5)
+##     sigma_slope3<-pow(1/tau_beta3,0.5)
+##     
+##     }
+##     ",fill=TRUE)
+## 
+## sink()
+```
+
+```r
 #Input Data
 Dat <- list(
   Y=obs,
@@ -423,24 +473,44 @@ m = jags(inits=InitStage,
          DIC=T)
 ```
 
-```{r}
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 720
+##    Unobserved stochastic nodes: 20
+##    Total graph size: 3828
+## 
+## Initializing model
+```
+
+
+```r
 pars<-extract_par(m)
 ```
 
 ##Assess Convergence
 
-```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
+
+```r
 ###Chains
 ggplot(pars[pars$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-```{r,fig.height=5,fig.width=11,eval=T}
+<img src="figure/unnamed-chunk-13-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+
+```r
 ggplot(pars[pars$par %in% c("gamma1","gamma2","gamma3","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
+<img src="figure/unnamed-chunk-14-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ##Posteriors
 
-```{r,cache=FALSE,fig.width=7,fig.height=13}
+
+```r
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
@@ -451,7 +521,8 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 #ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
 ```
 
-```{r,cache=FALSE,eval=TRUE,fig.height=13,fig.width=10}
+
+```r
 p<-ggplot(pars[pars$par %in% c("gamma1","gamma2","gamma3","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
@@ -464,13 +535,15 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 grid.arrange(psim,psim2,heights=c(.6,.4))
 ```
 
+<img src="figure/unnamed-chunk-16-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 ****
 <span style="color:red; font-size=25" >True values are the red dashed lines</span>
 
 ##Predicted Relationship 
 
-```{r,fig.height=4,fig.width=4}
 
+```r
 castdf<-dcast(pars[pars$par %in% c("gamma1","gamma2","gamma3","intercept"),], Chain + Draw~par,value.var="estimate")
 
 trajF<-function(alpha,beta1,beta2,beta3,x,resources){
@@ -513,8 +586,8 @@ intF<-function(alpha,beta1,beta2,beta3,x,resources){
 
 ## Calculated predicted visitation rates
 
-```{r}
 
+```r
 predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitarray),resources=resources,beta2=castdf$gamma2,beta3=gamma3)
 
 orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta1=rnorm(2000,gamma1,sigma_slope1),beta2=rnorm(2000,gamma2,sigma_slope2),beta3=rnorm(2000,gamma3,sigma_slope3),x=as.numeric(traitarray),resources=resources)
@@ -523,13 +596,19 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta1=rnorm(2000,gamma1,
 psim3<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1)+ xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=y))
 
 psim3
+```
+
+<img src="figure/unnamed-chunk-18-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+```r
 #ggsave("Figures/SimulationResults.jpg",height=5,width=6,dpi=300)
 ```
 
 
 ##Visualize interactions
 
-```{r}
+
+```r
 predyint<-intF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitarray),resources=resources,beta2=castdf$gamma2,beta3=gamma3)
 
 origint<-intF(alpha=rnorm(2000,intercept,sigma_intercept),beta1=rnorm(2000,gamma1,sigma_slope1),beta2=rnorm(2000,gamma2,sigma_slope2),beta3=rnorm(2000,gamma3,sigma_slope3),x=as.numeric(traitarray),resources=resources)
@@ -539,4 +618,6 @@ psim4<-ggplot(data=predyint,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),a
 
 psim4
 ```
+
+<img src="figure/unnamed-chunk-19-1.png" title="" alt="" style="display: block; margin: auto;" />
 
