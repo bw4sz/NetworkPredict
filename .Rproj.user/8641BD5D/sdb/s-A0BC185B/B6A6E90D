@@ -1,0 +1,18 @@
+{
+    "contents" : "install.packages(\"lme4\")\n\nhead(iris)\nlibrary(lme4)\n\nlm<-lm(data=iris,Sepal.Width~Sepal.Length)\n\nlm2<-lmer(data=iris,Sepal.Width~Sepal.Length + (1|Species))\n",
+    "created" : 1459289154587.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "46213136",
+    "id" : "B6A6E90D",
+    "lastKnownWriteTime" : 27866473672474725,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
