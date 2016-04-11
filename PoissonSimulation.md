@@ -136,7 +136,7 @@ For each of these scenerios, let's simulate some data to view what the model wou
 
 ```r
 mdat<-sim(-.5,0,0)
-ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson")) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Low","","High")) + facet_wrap(~Var1,nrow=1)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson")) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red") + facet_wrap(~Var1,nrow=1)
 ```
 
 <img src="figure/unnamed-chunk-3-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -145,8 +145,8 @@ ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(ae
 
 
 ```r
-mdat<-sim(-0.5,1,0)
-ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Low","","High")) + facet_wrap(~Var1,nrow=1)
+mdat<-sim(-0.5,0.5,0)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red") + facet_wrap(~Var1,nrow=1)
 ```
 
 <img src="figure/unnamed-chunk-4-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -155,8 +155,8 @@ ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(ae
 
 
 ```r
-mdat<-sim(-0.5,-1,0)
-ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Low","","High")) + facet_wrap(~Var1,nrow=1)
+mdat<-sim(-0.5,-0.5,0)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red") + facet_wrap(~Var1,nrow=1)
 ```
 
 <img src="figure/unnamed-chunk-5-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -165,18 +165,18 @@ ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(ae
 
 
 ```r
-mdat<-sim(-0.5,0,-1)
-ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Low","","High")) + facet_wrap(~Var1,nrow=1)
+mdat<-sim(-0.5,0,-0.5)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Simulated data for each species") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red") + facet_wrap(~Var1,nrow=1)
 ```
 
 <img src="figure/unnamed-chunk-6-1.png" title="" alt="" style="display: block; margin: auto;" />
 
-## Species interactions are based on similarity in morphology and abundance of resources, with an interaction.As resources increase, hummingbirds interact **less** with plants that match their bill length.
+## Species interactions are based on similarity in morphology and abundance of resources, with an interaction. As resources increase, hummingbirds interact **less** with plants that match their bill length.
 
 
 ```r
 mdat<-sim(-.5,0,0.5)
-ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red",breaks=c(-1.5,0,1.5),labels=c("Low","","High")) + facet_wrap(~Var1,nrow=1)
+ggplot(mdat,aes(col=resources,y=y,x=traitmatch)) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson"),formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Visits","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Flower Abundance") + scale_color_continuous(low="blue",high="red") + facet_wrap(~Var1,nrow=1)
 ```
 
 <img src="figure/unnamed-chunk-7-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -486,7 +486,7 @@ m = jags(inits=InitStage,
 ## Graph information:
 ##    Observed stochastic nodes: 720
 ##    Unobserved stochastic nodes: 20
-##    Total graph size: 2807
+##    Total graph size: 3033
 ## 
 ## Initializing model
 ```
