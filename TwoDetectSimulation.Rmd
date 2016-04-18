@@ -25,6 +25,7 @@ library(scales)
 library(dplyr)
 library(boot)
 library(bipartite)
+library(igraph)
 opts_chunk$set(cache=F,fig.height = 5,fig.width = 7,warning=F,messages=F,echo=F)
 
 source("Bayesian/BayesFunctions.R")
@@ -39,9 +40,9 @@ There is some underlying network of interactions between hummingbird species  i 
 
 # True Simulated values
 
-Hummingbird Species =10
+Hummingbird Species =5
 
-Plant Species=20
+Plant Species=6
 
 Survey Periods = 24
 
@@ -89,7 +90,7 @@ Resources are scored as either 'High' or 'Low' and is modeled as rbinom(n=1,size
 
 ```{r,eval=T}
 h_species=5
-plant_species=10
+plant_species=6
 Times=24
 detection_cam=0.25
 detection_trans=0.6
@@ -270,7 +271,7 @@ ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_slope1",
 
 #MCMC options
 
-ni <- 1000  # number of draws from the posterior
+ni <- 2000  # number of draws from the posterior
 nt <- max(c(1,ni*.0001))  #thinning rate
 nb <- ni*.85 # number to discard for burn-in
 nc <- 2  # number of chains
@@ -329,7 +330,7 @@ ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_slope1",
 
 #MCMC options
 
-ni <- 1000  # number of draws from the posterior
+ni <- 2000  # number of draws from the posterior
 nt <- max(c(1,ni*.0001))  #thinning rate
 nb <- ni*.90 # number to discard for burn-in
 nc <- 2  # number of chains
@@ -441,12 +442,14 @@ Generate a binary network from the model. Given the uncertainty, this analysis w
 ##
 Function to create a network from posteriors.
 
-Just trait model to start with.
+## Trait Model
 
 ```{r}
 spdf<-dcast(pars[pars$par %in% c("alpha","beta1","beta2"),], Chain + species+  Draw~par,value.var="estimate")
 
-networkstate<-matrix(nrow=h_species,ncol=plant_species)
+trait_model<-matrix(nrow=h_species,ncol=plant_species)
+colnames(trait_model)<-1:ncol(trait_model)
+rownames(trait_model)<-1:nrow(trait_model)
 
 for( x in 1:h_species){
     spdat<-filter(spdf,species==x)
@@ -455,11 +458,52 @@ for( x in 1:h_species){
     #For each plant species create a deviate
     for (y in 1:plant_species){
       prob=inv.logit(draw$alpha + draw$beta1 * traitmatch[x,y])
-      networkstate[x,y]<-rbinom(1,1,prob)
+      trait_model[x,y]<-rbinom(1,1,prob)
     }
 }
 
-plotweb(networkstate)
+plotweb(trait_model)
+```
+
+## Abundance Model
+
+Just for month #1.
+
+```{r}
+spdf<-dcast(pars[pars$par %in% c("alpha","beta1","beta2"),], Chain + species+  Draw~par,value.var="estimate")
+
+abundance_model<-matrix(nrow=h_species,ncol=plant_species)
+colnames(abundance_model)<-1:ncol(abundance_model)
+rownames(abundance_model)<-1:nrow(abundance_model)
+
+for( x in 1:h_species){
+    spdat<-filter(spdf,species==x)
+    draw<-spdat[sample(1:nrow(spdat),1),]
+    
+    #For each plant species create a deviate
+    for (y in 1:plant_species){
+      prob=inv.logit(draw$alpha + draw$beta2 * resources[y,1])
+      abundance_model[x,y]<-rbinom(1,1,prob)
+    }
+}
+
+plotweb(abundance_model)
+```
+
+# Compare Networks
+
+```{r}
+
+```
+
+# Consensus Network
+
+* Highlight Trait links as red
+* Highlgiht Abundance links as blue
+* Highlgiht joint links as purple
+* Highlight Missed links as black
+
+```{r}
 ```
 
 

@@ -14,9 +14,9 @@ There is some underlying network of interactions between hummingbird species  i 
 
 # True Simulated values
 
-Hummingbird Species =10
+Hummingbird Species =5
 
-Plant Species=20
+Plant Species=6
 
 Survey Periods = 24
 
@@ -248,5 +248,36 @@ $$\sigma_{\beta_2} = \sqrt[2]{\frac{1}{\tau_{\beta_2}}}$$
 ![](TwoDetectSimulation_files/figure-html/unnamed-chunk-14-1.png)
 
 The true data is plotted overtop the simulation relationship in black, and the predicted relationship in dashed red with pink CI intervals.
+
+#Predicted Networks
+
+Generate a binary network from the model. Given the uncertainty, this analysis will be done many times to calculate network metrics. 
+
+##
+Function to create a network from posteriors.
+
+## Trait Model
+
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-15-1.png)
+
+## Abundance Model
+
+Just for month #1.
+
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-16-1.png)
+
+# Compare Networks
+
+
+
+# Consensus Network
+
+* Highlight Trait links as red
+* Highlgiht Abundance links as blue
+* Highlgiht joint links as purple
+* Highlight Missed links as black
+
+
+
 
 
