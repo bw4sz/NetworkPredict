@@ -22,6 +22,7 @@ require(reshape2)
 require(ggplot2)
 library(scales)
 library(dplyr)
+library(boot)
 opts_chunk$set(cache=F,fig.height = 5,fig.width = 7,warning=F,messages=F,echo=F)
 
 source("Bayesian/BayesFunctions.R")
@@ -32,7 +33,7 @@ source("Bayesian/BayesFunctions.R")
 load("Simulation_2M.RData")
 ```
 
-There is some underlying intensity of interactions between hummingbird species  i and plant species j. We observe these interactions using transects across elevation ranges and cameras at individual flowers. To combine these data to jointly estimate the importance of trait-matching and resources on interaction intensity we need a hierarchical occupancy model that accounts for 1) the difference in sampling effort between survey types, 2) The variable number of replicates per species, 3) The difference in detectability of interactions based on survey type. The occupancy model below uses months as our estimated latent state. There are two surveys per month, and a variable number of cameras for each flower, often with no cameras on a given flower in a month. The model below was able to capture true simulated parameters that mimic our observed data.
+There is some underlying network of interactions between hummingbird species  i and plant species j. We observe these interactions using transects across elevation ranges and cameras at individual flowers. To combine these data to jointly estimate the importance of trait-matching and resources on interaction intensity we need a hierarchical occupancy model that accounts for 1) the difference in sampling effort between survey types, 2) The variable number of replicates per species, 3) The difference in detectability of interactions based on survey type. The occupancy model below uses months as our estimated latent state. There are two surveys per month, and a variable number of cameras for each flower, often with no cameras on a given flower in a month.
 
 # True Simulated values
 
@@ -147,10 +148,10 @@ beta3<-rnorm(h_species,gamma3,sigma_slope3)
 
 alpha<-rnorm(h_species,intercept,sigma_intercept)
 
-lambda<-exp(alpha + beta1 * traitarray + beta2 * resources + beta3 * resources * traitarray)
+phi<-inv.logit(alpha + beta1 * traitarray + beta2 * resources)
 
 #How many cameras for each flower during each time period?
-true_interactions<-array(data=sapply(lambda,function(x){rpois(1,lambda=x)}),dim=c(h_species,plant_species,Times))
+true_interactions<-array(data=sapply(phi,function(x){rbinom(1,1,prob=x)}),dim=c(h_species,plant_species,Times))
 
 #combine and melt into a single datafFrame
 mdat<-dcast(melt(list(y=true_interactions,traitmatch=traitarray,resources=resources)),Var1+Var2+Var3~L1)
@@ -195,46 +196,42 @@ TimeResources<-mdat %>% group_by(Time,Bird) %>% summarize(v=unique(resources)) %
 
 For hummingbird species i feeding on plant species j observed at time k and sampling event d. 
 
-$$ YTransect_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_{Transect}) $$
-
-$$ YCamera_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_{Camera}) $$
+$$ YTransect_{i,j,k,d} \sim Binomial(S_{i,j,k},\omega_{Transect}) $$
+$$ YCamera_{i,j,k,d} \sim Binomial(S_{i,j,k},\omega_{Camera}) $$
 $$ \omega_{Camera} <- \phi_{Camera} * EffortCamera_k $$
 $$ \omega_{Transect} <- \phi_{Transect}* EffortTransect_k $$
-$$ N_{i,j,k} \sim Pois(\lambda_{i,j,k}) $$
-$$ log(\lambda_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i} *Resources_k + \beta_{3,i} * Traitmatch_{i,j} * Resources_k $$
+$$ S_{i,j,k} \sim Binomial(\rho_{i,j,k}) $$
+$$ logit(\rho_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i} *Resources_{j,k} $$
 
 
 **Priors**
 
-$$ \phi_{Camera} \sim U(0,1) $$
-$$ \phi_{Transect} \sim U(0,1) $$
-$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_{1,i} \sim N(\gamma_1i,\tau_{\beta_1})$$
-$$\beta_{2,i} \sim N(\gamma_2i,\tau_{\beta_2})$$
-$$\beta_{3,i} \sim N(\gamma_3i,\tau_{\beta_3})$$
+$$ \phi_{Camera} \sim Uniform(0,1) $$
+$$ \phi_{Transect} \sim Uniform(0,1) $$
+$$\alpha_i \sim Normal(\mu_\alpha,\tau_{\alpha})$$
+$$\beta_{1,i} \sim Normal(\mu_{\beta_1},\tau_{\beta_1})$$
+$$\beta_{2,i} \sim Normal(\mu_{\beta_2},\tau_{\beta_2})$$
 
 **Hyperpriors**
 
 Group Level Means
 
-$$\gamma_{1,i} \sim N(0,0.0001)$$
-$$\gamma_{2,i} \sim N(0,0.0001)$$
-$$\gamma_{3,i} \sim N(0,0.0001)$$
-$$ intercept \sim N(0,0.0001)$$
+$$\mu_{\beta_1} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_2} \sim Normal(0,0.0001)$$
+$$ \mu_{\alpha} \sim Normal(0,0.0001)$$
 
 Group Level Variance
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta1 \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta2 \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta3 \sim Gamma(0.0001,0.0001)$$
+$$\tau_{\beta_1} \sim Gamma(0.0001,0.0001)$$
+$$\tau_{\beta_2} \sim Gamma(0.0001,0.0001)$$
 
 **Derived quantities**
 
-$$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{slope1} = \sqrt[2]{\frac{1}{\tau_{\beta_1}}}$$
-$$\sigma_{slope2} = \sqrt[2]{\frac{1}{\tau_{\beta_2}}}$$
-$$\sigma_{slope3} = \sqrt[2]{\frac{1}{\tau_{\beta_3}}}$$
+$$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
+$$\sigma_{\beta_1} = \sqrt[2]{\frac{1}{\tau_{\beta_1}}}$$
+$$\sigma_{\beta_2} = \sqrt[2]{\frac{1}{\tau_{\beta_2}}}$$
+$$\sigma_{\beta_3} = \sqrt[2]{\frac{1}{\tau_{\beta_3}}}$$
 
 # Analysis of observed data
 
@@ -320,7 +317,7 @@ initB<-as.numeric(matrix(nrow=h_species,ncol=1,data=.1))
 InitStage <- function(){list(beta1=initB,beta2=initB,beta3=initB,alpha=rep(.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta1=0.1,tau_beta2=0.1,tau_beta3=0.1,gamma1=0,gamma2=0,gamma3=0,dtrans=0.5,dcam=0.5,N=initY)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3","gamma1","gamma2","gamma3","dtrans","dcam")
+ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_slope1","sigma_slope2","gamma1","gamma2","dtrans","dcam")
 
 #MCMC options
 

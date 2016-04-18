@@ -9,10 +9,10 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * Traitmatch[i,j] * resources[i,j,k]
+    logit(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
     
     #True number of interactions
-    N[i,j,k] ~ dpois(lambda[i,j,k])
+    S[i,j,k] ~ dbern(phi[i,j,k])
     }
     }
     }
@@ -26,20 +26,19 @@ cat("
     #Observation Process for transects
     detect_transect[x]<-dtrans[Bird[x]] * trans_surveys[x]
 
-    Yobs_camera[x] ~ dbin(detect_cam[x],N[Bird[x],Plant[x],Time[x]])    
-    Yobs_transect[x] ~ dbin(detect_transect[x],N[Bird[x],Plant[x],Time[x]])    
+    Yobs_camera[x] ~ dbin(detect_cam[x],S[Bird[x],Plant[x],Time[x]])    
+    Yobs_transect[x] ~ dbin(detect_transect[x],S[Bird[x],Plant[x],Time[x]])    
 
     #Assess Model Fit
 
     #Fit discrepancy statistics
-    #eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]
+    #eval[x]<-detect[Bird[x]]*S[Bird[x],Plant[x],Camera[x]]
     #E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
-    #ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])
+    #ynew[x]~dbin(detect[Bird[x]],S[Bird[x],Plant[x],Camera[x]])
     #E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
     
     }
-    
 
     #Species level priors
     
@@ -92,10 +91,7 @@ cat("
     #Group Effect of Resources
     tau_beta2 ~ dgamma(0.0001,0.0001)
     sigma_slope2<-pow(1/tau_beta2,.5)
-    
-    #Group Effect of Resources * Traits
-    tau_beta3 ~ dgamma(0.0001,0.0001)
-    sigma_slope3<-pow(1/tau_beta3,.5)
+
 }
     ",fill=TRUE)
 
