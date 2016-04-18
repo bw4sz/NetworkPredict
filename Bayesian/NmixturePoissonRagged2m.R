@@ -9,10 +9,10 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    logit(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+    logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[j,k]
     
     #True number of interactions
-    S[i,j,k] ~ dbern(phi[i,j,k])
+    S[i,j,k] ~ dbern(rho[i,j,k])
     }
     }
     }
@@ -56,7 +56,6 @@ cat("
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta1[i] ~ dnorm(gamma1,tau_beta1)    
     beta2[i] ~ dnorm(gamma2,tau_beta2)    
-    beta3[i] ~ dnorm(gamma3,tau_beta3)    
     }
 
     #Hyperpriors
@@ -74,7 +73,7 @@ cat("
 
     # Group intercept variance
     tau_alpha ~ dgamma(0.0001,0.0001)
-    sigma_int<-pow(1/tau_alpha,2) 
+    sigma_alpha<-pow(1/tau_alpha,2) 
     
     #Group effect detect camera
     tau_dcam ~ dunif(0,10)
