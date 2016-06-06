@@ -12,7 +12,6 @@ output:
 
 #Summary
 
-
 ```{r,echo=F,message=FALSE,warning=F}
 library(ggplot2)
 library(stringr)
@@ -26,7 +25,7 @@ library(dplyr)
 library(boot)
 library(bipartite)
 library(igraph)
-opts_chunk$set(cache=F,fig.height = 5,fig.width = 7,warning=F,messages=F,echo=F)
+opts_chunk$set(cache=F,fig.height = 5,fig.width = 7,warning=F,messages=F,echo=T)
 
 source("Bayesian/BayesFunctions.R")
 ```

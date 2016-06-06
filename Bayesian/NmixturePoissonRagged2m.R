@@ -6,7 +6,7 @@ cat("
     #Compute intensity for each pair of birds and plants
     for (i in 1:Birds){
     for (j in 1:Plants){
-    for (k in 1:Times){
+    for (k in 1:Cameras){
     
     #Process Model
     logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[j,k]
@@ -72,7 +72,7 @@ cat("
     dprior_trans ~ dnorm(0,0.5)
 
     # Group intercept variance
-    tau_alpha ~ dgamma(0.0001,0.0001)
+    tau_alpha ~ dt(0,1,1)I(0,1)
     sigma_alpha<-pow(1/tau_alpha,2) 
     
     #Group effect detect camera
@@ -84,11 +84,11 @@ cat("
     sigma_dtrans<-pow(1/tau_dtrans,.5)
 
     #Group Effect of traits
-    tau_beta1 ~ dgamma(0.0001,0.0001)
+    tau_beta1 ~ dt(0,1,1)I(0,)
     sigma_slope1<-pow(1/tau_beta1,.5)
     
     #Group Effect of Resources
-    tau_beta2 ~ dgamma(0.0001,0.0001)
+    tau_beta2 ~ dt(0,1,1)I(0,)
     sigma_slope2<-pow(1/tau_beta2,.5)
 
 }
