@@ -26,33 +26,26 @@ $$ logit(\rho_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i}
 
 $$ \phi_{Camera} \sim U(0,1) $$
 $$ \phi_{Transect} \sim U(0,1) $$
-$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_{1,i} \sim N(\gamma_1i,\tau_{\beta_1})$$
-$$\beta_{2,i} \sim N(\gamma_2i,\tau_{\beta_2})$$
-$$\beta_{3,i} \sim N(\gamma_3i,\tau_{\beta_3})$$
+$$\alpha_i \sim Normal(\alpha_mu,\alpha_{\tau})$$
+$$\beta_{1,i} \sim Normal(\mu_\beta_1,\tau_beta_1)$$
+$$\beta_{2,i} \sim Normal(\mu_\beta_2,\tau_beta_2)$$
+$$\beta_{3,i} \sim Normal(\mu_\beta_3,\tau_beta_3)$$
 
 **Hyperpriors**
 
 Group Level Means
+$$ \mu_\alpha \sim N(0,0.0001)$$
 
-$$\gamma_{1,i} \sim N(0,0.0001)$$
-$$\gamma_{2,i} \sim N(0,0.0001)$$
-$$\gamma_{3,i} \sim N(0,0.0001)$$
-$$ intercept \sim N(0,0.0001)$$
+$$\mu_\beta_1 \sim N(0,0.0001)$$
+$$\mu_\beta_2} \sim N(0,0.0001)$$
+$$\mu_\beta_3 \sim N(0,0.0001)$$
 
 Group Level Variance
 
-$$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta1 \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta2 \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta3 \sim Gamma(0.0001,0.0001)$$
-
-**Derived quantities**
-
-$$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{slope1} = \sqrt[2]{\frac{1}{\tau_{\beta_1}}}$$
-$$\sigma_{slope2} = \sqrt[2]{\frac{1}{\tau_{\beta_2}}}$$
-$$\sigma_{slope3} = \sqrt[2]{\frac{1}{\tau_{\beta_3}}}$$
+$$\tau_{\alpha} \sim Half-Cauchy(0,1,1)$$
+$$\tau_\beta_1 \sim Half-Cauchy(0,1,1)$$
+$$\tau_\beta_2 \sim Half-Cauchy(0,1,1)$$
+$$\tau_\beta_3 \sim Half-Cauchy(0,1,1)$$
 
 ```{r,eval=T,strip.white=T}
 
