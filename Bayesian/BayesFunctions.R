@@ -2,8 +2,7 @@
 
 extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   #extract desired info from the models
-  n<-dim(x$BUGSoutput$sims.array)[1]
-  parsO<-melt(x$BUGSoutput$sims.array[max(0,(n-1000)):n,,])
+  parsO<-melt(x$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
   
   #label species and plants
@@ -47,7 +46,7 @@ trajState<-function(alpha,beta,x,observed){
   for (s in 1:nrow(fdat)){
     a<-fdat$alpha[s]
     b<-fdat$beta[s]
-    yp=exp(a + (b*x$value))
+    yp=inv.logit(a + (b*x$value))
     
     #compute pred value
     state<-data.frame(x,State=rpois(length(yp),yp))
@@ -73,7 +72,7 @@ trajF<-function(alpha,beta1,beta2,beta3,x,resources,type='quantile'){
   sampletraj<-list()
   
   for (y in 1:nrow(indat)){
-    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
+    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
   }
@@ -98,7 +97,7 @@ trajLog<-function(alpha,beta1,beta2,beta3,x,resources,type='quantile'){
   sampletraj<-list()
   
   for (y in 1:nrow(indat)){
-    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
+    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
   }

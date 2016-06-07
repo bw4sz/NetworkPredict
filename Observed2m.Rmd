@@ -40,7 +40,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-#load("Observed.Rdata")
+load("Observed.Rdata")
 ```
 
 #Load in data
@@ -433,7 +433,7 @@ indat$jTime<-as.numeric(as.factor(indat$Time))
 indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
-resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=length(mean(Used_Flowers))) %>% mutate(v=scale(v)) %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
+resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=mean(Used_Flowers)) %>% mutate(v=scale(v)) %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 
 #bind to indat for later
 mr<-melt(resourceMatrix)

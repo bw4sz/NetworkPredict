@@ -29,7 +29,7 @@ cat("
     Yobs_camera[x] ~ dbern(detect_cam[x] * S[Bird[x],Plant[x],Time[x]])    
     Yobs_transect[x] ~ dbern(detect_transect[x] * S[Bird[x],Plant[x],Time[x]])    
 
-    #Assess Model Fit
+    #Assess Model Fit - Posterior predictive check
 
     #Fit discrepancy statistics
     #eval[x]<-detect[Bird[x]]*S[Bird[x],Plant[x],Camera[x]]
@@ -52,26 +52,40 @@ cat("
     
     #Species level priors
     for (i in 1:Birds){
-      alpha[i] ~ dnorm(intercept,tau_alpha)
-      beta1[i] ~ dnorm(gamma1,tau_beta1)    
-      beta2[i] ~ dnorm(gamma2,tau_beta2)    
+      
+      #Intercept
+      #logit prior, then transform for plotting
+      lalpha[i] ~ dnorm(lintercept,ltau_alpha)
+      logit(alpha[i])<-alpha[i]
+      
+      #Traits slope 
+      lbeta1[i] ~ dnorm(lgamma1,ltau_beta1)    
+      logit(beta1[i])<-lbeta1[i]
+      #Plant slope
+      lbeta2[i] ~ dnorm(lgamma2,ltau_beta2)    
+      logit(beta2[i])<-lbeta2[i]
     }
 
     #Hyperpriors
-    #Slope grouping
-    gamma1~dnorm(0,0.0001)
-    gamma2~dnorm(0,0.0001)
-    
-    #Intercept grouping
-    intercept~dnorm(0,0.0001)
-    
+    #Slopes 
+    #Logit prior for each, then transformed
+    lgamma1~dnorm(0,0.386)
+    logit(gamma1)<-lgamma1
+
+    lgamma2~dnorm(0,0.386)
+    logit(gamma2)<-lgamma2
+
+    #Intercept 
+    lintercept~dnorm(0,0.386)
+    logit(lintercept)<-lintercept
+
     #Detection group prior
     #dprior_cam ~ dnorm(0,0.386)
     #dprior_trans ~ dnorm(0,0.386)
 
     # Group intercept variance
-    tau_alpha ~ dt(0,1,1)I(0,1)
-    sigma_alpha<-pow(1/tau_alpha,2) 
+    ltau_alpha ~ dt(0,1,1)I(0,1)
+    sigma_alpha<-pow(1/inv.logit(ltau_alpha),2) 
     
     #Group effect detect camera
     #tau_dcam ~ dunif(0,10)
@@ -82,12 +96,12 @@ cat("
     #sigma_dtrans<-pow(1/tau_dtrans,.5)
 
     #Group Effect of traits
-    tau_beta1 ~ dt(0,1,1)I(0,)
-    sigma_slope1<-pow(1/tau_beta1,.5)
+    ltau_beta1 ~ dt(0,1,1)I(0,)
+    sigma_slope1<-pow(1/inv.logit(ltau_beta1),.5)
     
     #Group Effect of Resources
-    tau_beta2 ~ dt(0,1,1)I(0,)
-    sigma_slope2<-pow(1/tau_beta2,.5)
+    ltau_beta2 ~ dt(0,1,1)I(0,)
+    sigma_slope2<-pow(1/inv.logit(ltau_beta2),.5)
 
 }
     ",fill=TRUE)

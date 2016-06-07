@@ -97,15 +97,9 @@ InitStage <- function(){
 list(beta1=initB,beta2=initB,alpha=rep(.5,Birds),intercept=0,tau_alpha=0.1,tau_beta1=0.1,tau_beta2=0.1,gamma1=0,gamma2=0)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3","gamma1","gamma2","gamma3","dtrans","dcam")
+ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3","gamma1","gamma2","dtrans","dcam")
 
-#MCMC options
-ni <- 100  # number of draws from the posterior
-nt <- max(c(2,ni*.0001))  #thinning rate
-nb <- ni*.9 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
+#Jags Data
 
   Yobs_camera = indat$Camera
   Yobs_transect = indat$Transect
@@ -121,7 +115,9 @@ nc <- 2  # number of chains
   trans_surveys= trans_effort
   Traitmatch=jTraitmatch
 
-  system.time(m2<-jags(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+#MCMC options
+
+  system.time(m2<-jags.parallel(data=Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=5,n.iter=500,n.burnin=500*.9,n.chains=2))
 ```
 
 ```{r,eval=F}
@@ -180,9 +176,9 @@ castdf<-dcast(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept"),
 
 ```{r,fig.width=7,fig.height=6}
 #Trajectories from posterior
-predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=indat$Traitmatch,resources=indat$Used_Flowers,beta2=castdf$gamma3,beta3=0,type='quantile')
+predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=indat$Traitmatch,resources=indat$scaledR,beta2=castdf$gamma2,beta3=0,type='quantile')
 
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2,fill="red")  +  theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill="red")  +  theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
 ```
 
 ## At High and Low Resource Availability
@@ -190,9 +186,9 @@ ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2,f
 ```{r,fig.height=6,fig.width=10}
 
 #Trajectories from posterior
-predH<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=indat[indat$ BUsed_Flowers==1,"Traitmatch"],resources=indat[indat$ BUsed_Flowers==1,"scaledR"],beta2=castdf$gamma2,beta3=castdf$gamma3,type='quantile')
+predH<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=indat[indat$ BUsed_Flowers==1,"Traitmatch"],resources=indat[indat$ BUsed_Flowers==1,"scaledR"],beta2=castdf$gamma2,beta3=0,type='quantile')
 
-predL<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=indat[indat$ BUsed_Flowers==0,"Traitmatch"],resources=indat[indat$ BUsed_Flowers==0,"scaledR"],beta2=castdf$gamma2,beta3=castdf$gamma3,type='quantile')
+predL<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=indat[indat$ BUsed_Flowers==0,"Traitmatch"],resources=indat[indat$ BUsed_Flowers==0,"scaledR"],beta2=castdf$gamma2,beta3=0,type='quantile')
 
 predhl<-melt(list(High=predH,Low=predL),id.vars=colnames(predH))
 
@@ -206,12 +202,11 @@ ggsave("Figures/AllRegression.jpeg",height=5,width=7)
 
 ```
 
-
 ##Species Predictions
 
 ```{r,fig.height=10,fig.width=11,eval=T}
 
-castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1","beta2","beta3","alpha"),], species +Chain +Draw ~par ,value.var="estimate")
+castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1","beta2","alpha"),], species +Chain +Draw ~par ,value.var="estimate")
 
 #Turn to 
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -228,7 +223,7 @@ for(d in 1:length(species.split)){
   billd<-indat[indat$jBird %in% index,]
 
   #scale resources
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd$scaledR,x=billd$Traitmatch,type='quantile')
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=0,resources=billd$scaledR,x=billd$Traitmatch,type='quantile')
   }
 
 names(species.traj)<-names(species.split)
@@ -264,8 +259,8 @@ for(d in 1:length(species.split)){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
 
-  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$ BUsed_Flowers==0,"scaledR"],x=billd[billd$ BUsed_Flowers==0,"Traitmatch"],type='quantile')
-  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$ BUsed_Flowers==1,"scaledR"],x=billd[billd$ BUsed_Flowers==1,"Traitmatch"],type='quantile')
+  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=0,resources=billd[billd$ BUsed_Flowers==0,"scaledR"],x=billd[billd$ BUsed_Flowers==0,"Traitmatch"],type='quantile')
+  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=0,resources=billd[billd$ BUsed_Flowers==1,"scaledR"],x=billd[billd$ BUsed_Flowers==1,"Traitmatch"],type='quantile')
   sm<-melt(list(High=sh,Low=sl),id.vars=colnames(sl))
   colnames(sm)[5]<-"Resources"
   species.traj[[d]]<-sm
@@ -306,7 +301,7 @@ for(d in 1:length(species.split)){
   billd<-mindat[mindat$jBird %in% index,]
 
   #Calculate interaction effect
-  species.traj[[d]]<-intF(alpha=dat$alpha,beta1=dat$beta1,x=billd[billd$value > 0 & !is.na(billd$value),'Traitmatch'],resources=billd[billd$value > 0 & !is.na(billd$value),'scaledR'],beta2=dat$beta2,beta3=dat$beta3,type='quantile')
+  species.traj[[d]]<-intF(alpha=dat$alpha,beta1=dat$beta1,x=billd[billd$value > 0 & !is.na(billd$value),'Traitmatch'],resources=billd[billd$value > 0 & !is.na(billd$value),'scaledR'],beta2=dat$beta2,beta3=0,type='quantile')
   
   }
 
@@ -475,4 +470,32 @@ sm<-lapply(sm,function(x){
 species.max<-rbind_all(sm)
 
 ggplot(species.max,aes(x=TotalCorolla,y=lambda,col=as.factor(BUsed_Flowers))) + geom_density2d() + theme_bw() + scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + scale_y_continuous(breaks=c(0,1),labels=c("Low","High")) + xlab("Flower Corolla Length") + ylab("Hummingbird Visitation")
+```
+
+#Generate network
+```{r}
+
+```{r}
+spdf<-dcast(pars[pars$par %in% c("alpha","beta1","beta2"),], Chain + species+  Draw~par,value.var="estimate")
+
+trait_model<-matrix(nrow=h_species,ncol=plant_species)
+colnames(trait_model)<-1:ncol(trait_model)
+rownames(trait_model)<-1:nrow(trait_model)
+
+for( x in 1:h_species){
+    spdat<-filter(spdf,species==x)
+    draw<-spdat[sample(1:nrow(spdat),1),]
+    
+    #For each plant species create a deviate
+    for (y in 1:plant_species){
+      prob=inv.logit(draw$alpha + draw$beta1 * traitmatch[x,y])
+      trait_model[x,y]<-rbinom(1,1,prob)
+    }
+}
+
+plotweb(trait_model)
+```
+
+```{r}
+save.image("ObservedModel.RData")
 ```
