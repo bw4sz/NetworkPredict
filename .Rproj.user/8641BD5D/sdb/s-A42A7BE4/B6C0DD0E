@@ -1,10 +1,10 @@
 {
-    "contents" : "#Trajectories from posterior\npredy<-trajF(alpha=-40,beta1=20,x=indat$Traitmatch,resources=indat$scaledR,beta2=-1,beta3=0,type='quantile')\n\nggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2,fill=\"red\")  +  theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) \n",
+    "contents" : "#Trajectories from posterior\npredy<-trajF(alpha=-40,beta1=20,x=indat$Traitmatch,resources=indat$scaledR,beta2=-1,beta3=0,type='quantile')\n\nggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2,fill=\"red\")  +  theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) \n\n\nx=1:10\ninv.logit(1+1)\n",
     "created" : 1465310718363.000,
     "dirty" : true,
     "encoding" : "",
     "folds" : "",
-    "hash" : "1539783288",
+    "hash" : "4084257494",
     "id" : "B6C0DD0E",
     "lastKnownWriteTime" : 21955250054430836,
     "path" : null,

@@ -90,13 +90,10 @@ Dat <- c('Yobs_camera','Yobs_transect','Birds','Bird','Plant','Time','Plants','T
 InitStage <- function(){
   #A blank Y matrix - all present
   initY<-array(dim=c(Birds,Plants,Times),1)
-  initB<-as.numeric(matrix(nrow=Birds,ncol=1,data=0))
-  initD<-as.numeric(matrix(nrow=Birds,ncol=1,data=.5))
-
-list(beta1=initB,beta2=initB,alpha=rep(.5,Birds),intercept=0,tau_alpha=0.1,tau_beta1=0.1,tau_beta2=0.1,gamma1=0,gamma2=0)}
+list(S=initY)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_slope1","sigma_slope2","sigma_slope3","gamma1","gamma2","dtrans","dcam")
+ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_slope1","sigma_slope2","gamma1","gamma2","dtrans","dcam")
 
 #Jags Data
 
@@ -114,9 +111,26 @@ ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_slope1","s
   trans_surveys= trans_effort
   Traitmatch=jTraitmatch
 
-#MCMC options
+  #or as list
+  datlist<-list(
+  Yobs_camera = indat$Camera,
+  Yobs_transect = indat$Transect,
+  Birds=max(indat$jBird),
+  Bird=indat$jBird,
+  Plant=indat$jPlant,
+  Time=indat$jID,
+  Plants=max(indat$jPlant),
+  Times=max(indat$jID),
+  resources=resourceMatrix,
+  Nobs=nrow(indat),
+  cam_surveys= cam_effort,
+  trans_surveys= trans_effort,
+  Traitmatch=jTraitmatch)
 
-  system.time(m2<-jags(data=Dat,parameters.to.save =ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=1,n.iter=100,n.burnin=0,n.chains=1))
+  #MCMC options
+  system.time(m2<-jags.model(n.adapt=0,data=datlist,inits=InitStage,file="Bayesian/NmixturePoissonRagged2m.jags"))
+
+    #system.time(m2<-jags(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=1,n.iter=100,n.burnin=0,n.chains=1,DIC=F))
 ```
 
 ```{r,eval=F}
@@ -136,7 +150,7 @@ pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1"," beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
+ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
 ```{r,fig.height=10}

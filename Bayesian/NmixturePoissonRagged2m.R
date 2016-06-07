@@ -40,53 +40,19 @@ cat("
     
     }
 
-    #Transect Prior
-    #Detect priors, logit transformed
+    #Priors
+    #Observation model
+    #Detect priors, logit transformed - Following lunn 2012 p85
+    
     #For Cameras
-    logit(dcam) <- dcam_logit
-    dcam_logit ~ dnorm(0,0.386)
-    
+    dcam ~ dunif(0,1)
+
     #For Transects
-    logit(dtrans) <- dtrans_logit
-    dtrans_logit ~ dnorm(0,0.386)
+    dtrans ~ dunif(0,1)
     
-    #Species level priors
-    for (i in 1:Birds){
-      
-      #Intercept
-      #logit prior, then transform for plotting
-      lalpha[i] ~ dnorm(lintercept,ltau_alpha)
-      logit(alpha[i])<-alpha[i]
-      
-      #Traits slope 
-      lbeta1[i] ~ dnorm(lgamma1,ltau_beta1)    
-      logit(beta1[i])<-lbeta1[i]
-      #Plant slope
-      lbeta2[i] ~ dnorm(lgamma2,ltau_beta2)    
-      logit(beta2[i])<-lbeta2[i]
-    }
-
-    #Hyperpriors
-    #Slopes 
-    #Logit prior for each, then transformed
-    lgamma1~dnorm(0,0.386)
-    logit(gamma1)<-lgamma1
-
-    lgamma2~dnorm(0,0.386)
-    logit(gamma2)<-lgamma2
-
-    #Intercept 
-    lintercept~dnorm(0,0.386)
-    logit(intercept)<-lintercept
-
     #Detection group prior
     #dprior_cam ~ dnorm(0,0.386)
     #dprior_trans ~ dnorm(0,0.386)
-
-    # Group intercept variance
-    ltau_alpha ~ dt(0,1,1)I(0,1)
-    logit(tau_alpha)<-ltau_alpha
-    sigma_alpha<-pow(1/tau_alpha,2) 
     
     #Group effect detect camera
     #tau_dcam ~ dunif(0,10)
@@ -96,12 +62,50 @@ cat("
     #tau_dtrans ~ dunif(0,10)
     #sigma_dtrans<-pow(1/tau_dtrans,.5)
 
-    #Group Variance in trait slope
+    #Process Model
+    #Species level priors
+    for (i in 1:Birds){
+      
+      #Intercept
+      #logit prior, then transform for plotting
+      lalpha[i] ~ dnorm(lintercept,ltau_alpha)
+      logit(alpha[i])<-lalpha[i]
+      
+      #Traits slope 
+      lbeta1[i] ~ dnorm(lgamma1,ltau_beta1)    
+      logit(beta1[i])<-lbeta1[i]
+      
+      #Plant slope
+      lbeta2[i] ~ dnorm(lgamma2,ltau_beta2)    
+      logit(beta2[i])<-lbeta2[i]
+    }
+
+    #Group process priors
+    #Logit prior for each, then transformed
+    
+    #Intercept 
+    lintercept~dnorm(0,0.386)
+    logit(intercept)<-lintercept
+    
+    #Intercept variance
+    ltau_alpha ~ dt(0,1,1)I(0,)
+    logit(tau_alpha)<-ltau_alpha
+    sigma_alpha<-pow(1/tau_alpha,2) 
+    
+    #Trait
+    lgamma1~dnorm(0,0.386)
+    logit(gamma1)<-lgamma1
+
+    #Resources
+    lgamma2~dnorm(0,0.386)
+    logit(gamma2)<-lgamma2
+
+    #Variance in Trait slope among species
     ltau_beta1 ~ dt(0,1,1)I(0,)
     logit(tau_beta1)<-ltau_beta1
     sigma_slope1<-pow(1/tau_beta1,.5)
     
-    #Group Variance in Resources slope
+    #Group Variance in Resources slope among species
     ltau_beta2 ~ dt(0,1,1)I(0,)
     logit(tau_beta2)<-ltau_beta2
     sigma_slope2<-pow(1/tau_beta2,.5)
