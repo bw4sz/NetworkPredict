@@ -24,9 +24,8 @@ library(bipartite)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 set.seed(3)
+
 #source functions
-
-
 source("Bayesian/BayesFunctions.R")
 ```
 

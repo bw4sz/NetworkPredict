@@ -401,9 +401,6 @@ indat$BAll_Flowers<-(indat$All_Flowers > quantile(indat$All_Flowers,0.75))*1
 
 qthresh<-indat %>% group_by(Hummingbird) %>% summarize(UThresh=mean(Used_Flowers))
 
-#save a copy in case you need it here
-tosave<-indat
-
 indat<-merge(indat,qthresh)
 indat$BUsed_Flowers<-(indat$Used_Flowers > indat$UThresh)*1
 
@@ -429,8 +426,8 @@ resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=mean(Used_F
 
 #bind to indat for later
 mr<-melt(resourceMatrix)
-colnames(mr)<-c("jBird","jPlant","jTime","scaledR")
-indat<-merge(indat,mr,by=c("jBird","jPlant","jTime"))
+colnames(mr)<-c("jBird","jPlant","jID","scaledR")
+indat<-merge(indat,mr,by=c("jBird","jPlant","jID"))
 
 ##melted version for plotting
 mindat<-melt(indat,measure.vars=c("Camera","Transect"))
