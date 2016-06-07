@@ -40,7 +40,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-load("Observed.Rdata")
+#load("Observed.Rdata")
 ```
 
 #Load in data
@@ -78,7 +78,7 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
 #Some reasonable level of presences, 25 points
-keep<-names(which(table(int$Hummingbird) > 25))
+keep<-names(which(table(int$Hummingbird) > 10))
 
 int<-int[int$Hummingbird %in% keep & !int$Hummingbird %in% c("Sparkling Violetear"),]
 
@@ -364,30 +364,25 @@ slist<-int %>% group_by(Hummingbird,Iplant_Double) %>% distinct() %>% dplyr::sel
 #Create time ID for flower transects
 full.fl$Time<-paste(full.fl$Month,full.fl$Year,sep="_")
 
+#all flowers for each ID period
+allF<-full.fl %>% group_by(Month,Year,Transect_R,Date_F) %>% summarize(n=sum(Total_Flowers,na.rm=T)) %>% summarize(mn=mean(n)) %>% summarize(F=sum(mn)) %>% as.data.frame()
+
+#Individual flowers for each ID period
+indF<-full.fl %>% group_by(Iplant_Double,Month,Year,Transect_R,Date_F) %>% summarize(n=sum(Total_Flowers,na.rm=T)) %>% summarize(mn=mean(n)) %>% summarize(F=sum(mn)) %>% as.data.frame()
+
+
 for (x in 1:nrow(indat)){
 
- #Flowers used by the hum species
+#All flowers
+ indat$All_Flowers[x]<-allF[allF$Month %in% indat$Month[x] & allF$Year %in% indat$Year[x],"F"]
+ 
+ #filter by species used by hummingbird
  sp_list<-slist[slist$Hummingbird %in% indat$Hummingbird[x],"Iplant_Double"]
-  
- #Species of flower
- sp <-  indat[x,"Iplant_Double"]
- 
- #Filter by Date
- bydate<-full.fl[full.fl$Month %in% indat$Month[x] & full.fl$Year %in% indat$Year[x],]
- 
- #average number of flowers at each elevation within that time frame.
- 
- #count number of all flowers
- indat$All_Flowers[x]<- bydate%>% group_by(Date_F,Transect_R) %>% summarize(n=sum(Total_Flowers,na.rm=T)) %>% group_by(Transect_R) %>% summarize(mn=mean(n)) %>% summarize(F=sum(mn)) %>% .$F
- 
- #filter by species
-  byspecies<-bydate[bydate$Iplant_Double %in% sp_list$Iplant_Double,]
- 
-  indat$Used_Flowers[x]<-byspecies%>% group_by(Date_F,Transect_R) %>% summarize(n=sum(Total_Flowers,na.rm=T)) %>% group_by(Transect_R) %>% summarize(mn=mean(n)) %>% summarize(F=sum(mn)) %>% .$F
+
+ indat$Used_Flowers[x]<-sum(indF[indF$Iplant_Double %in% sp_list$Iplant_Double & indF$Month %in% indat$Month[x] & indF$Year %in% indat$Year[x],"F"])
   
   #just the abundance of that species
-  bys <-  bydate[bydate$Iplant_Double %in% sp,]
-  indat$FlowerA[x] <-  bys %>% group_by(Date_F,Transect_R) %>% summarize(n=sum(Total_Flowers,na.rm=T)) %>% group_by(Transect_R) %>% summarize(mn=mean(n)) %>% summarize(F=sum(mn)) %>% .$F
+  indat$FlowerA[x]<-sum(indF[indF$Iplant_Double %in% indat$Iplant_Double[x] & indF$Month %in% indat$Month[x] & indF$Year %in% indat$Year[x],"F"])
 
 }
 ```
@@ -403,9 +398,6 @@ ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hum
 ```{r}
 #All Resources
 indat$BAll_Flowers<-(indat$All_Flowers > quantile(indat$All_Flowers,0.75))*1
-#mnth<-sapply(indat$Time,function(x){
- # as.numeric(str_split(x,"_")[[1]][1])})
-#indat$BAll_Flowers<-(mnth  %in% c(6,7,8,9,10))*1
 
 qthresh<-indat %>% group_by(Hummingbird) %>% summarize(UThresh=mean(Used_Flowers))
 

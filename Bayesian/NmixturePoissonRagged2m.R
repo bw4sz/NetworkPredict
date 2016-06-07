@@ -77,7 +77,7 @@ cat("
 
     #Intercept 
     lintercept~dnorm(0,0.386)
-    logit(lintercept)<-lintercept
+    logit(intercept)<-lintercept
 
     #Detection group prior
     #dprior_cam ~ dnorm(0,0.386)
@@ -85,7 +85,8 @@ cat("
 
     # Group intercept variance
     ltau_alpha ~ dt(0,1,1)I(0,1)
-    sigma_alpha<-pow(1/inv.logit(ltau_alpha),2) 
+    logit(tau_alpha)<-ltau_alpha
+    sigma_alpha<-pow(1/tau_alpha,2) 
     
     #Group effect detect camera
     #tau_dcam ~ dunif(0,10)
@@ -95,13 +96,15 @@ cat("
     #tau_dtrans ~ dunif(0,10)
     #sigma_dtrans<-pow(1/tau_dtrans,.5)
 
-    #Group Effect of traits
+    #Group Variance in trait slope
     ltau_beta1 ~ dt(0,1,1)I(0,)
-    sigma_slope1<-pow(1/inv.logit(ltau_beta1),.5)
+    logit(tau_beta1)<-ltau_beta1
+    sigma_slope1<-pow(1/tau_beta1,.5)
     
-    #Group Effect of Resources
+    #Group Variance in Resources slope
     ltau_beta2 ~ dt(0,1,1)I(0,)
-    sigma_slope2<-pow(1/inv.logit(ltau_beta2),.5)
+    logit(tau_beta2)<-ltau_beta2
+    sigma_slope2<-pow(1/tau_beta2,.5)
 
 }
     ",fill=TRUE)

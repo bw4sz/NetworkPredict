@@ -20,12 +20,12 @@ library(gridExtra)
 library(boot)
 library(picante)
 library(bipartite)
-library(VennDiagram)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 set.seed(3)
 #source functions
+
 
 source("Bayesian/BayesFunctions.R")
 ```
@@ -90,7 +90,7 @@ Dat <- c('Yobs_camera','Yobs_transect','Birds','Bird','Plant','Time','Plants','T
 #Inits
 InitStage <- function(){
   #A blank Y matrix - all present
-  initY<-array(dim=c(Birds,Plants,Times),30)
+  initY<-array(dim=c(Birds,Plants,Times),1)
   initB<-as.numeric(matrix(nrow=Birds,ncol=1,data=0))
   initD<-as.numeric(matrix(nrow=Birds,ncol=1,data=.5))
 
@@ -117,7 +117,7 @@ ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_slope1","s
 
 #MCMC options
 
-  system.time(m2<-jags.parallel(data=Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=5,n.iter=500,n.burnin=500*.9,n.chains=2))
+  system.time(m2<-jags(data=Dat,parameters.to.save =ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=1,n.iter=100,n.burnin=0,n.chains=1))
 ```
 
 ```{r,eval=F}
