@@ -57,23 +57,15 @@ Corolla sizes
 
 Corolla<-rpois(plant_species,15)
 
-Survey periods are 70% cameras, 30% Transect
-Transects have two replicates.Cameras have variable number of replicates, modeled as rpois(lambda=0.5).
-
 Resources are scored as either 'High' or 'Low' and is modeled as rbinom(n=1,size=1,prob=0.5)
 
 
 ```r
 h_species=5
 plant_species=6
-Times=50
+Times=24
 detection_cam=0.25
 detection_trans=0.6
-
-#which records are camera, which are transects?
-mt<-rbinom(Times,1,0.7)
-mt[which(mt==1)]<-"Camera"
-mt[!mt=="Camera"]<-"Transect"
 
 #Bill sizes
 Bill<-rpois(h_species,10)
@@ -97,7 +89,7 @@ resources<-array(NA,dim=c(h_species,plant_species,Times))
 
 #fill for each month
 for (x in 1:Times){
-  resources[,,x]<-rpois(1,10)  
+  resources[,,x]<-rbinom(1,1,0.25)  
 }
 
 #standardize predictors
@@ -117,15 +109,19 @@ beta1_sigma<- 0.05
 beta2_mu=0
 beta2_sigma<- 0.05
 
+#Interaction
+beta3_mu=0.75
+beta3_sigma<- 0.05
+
 #loop through each species and plants
 
 #draw values from hierarcichal distributions
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 beta2<-rnorm(h_species,beta2_mu, beta2_sigma)
-
+beta3<-rnorm(h_species,beta3_mu, beta3_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
 
-phi<-inv.logit(alpha + beta1 * traitarray + beta2 * resources)
+phi<-inv.logit(alpha + beta1 * traitarray + beta2*resources+beta3*traitarray*resources)
 
 #How many cameras for each flower during each time period?
 true_interactions<-array(data=sapply(phi,function(x){rbinom(1,1,prob=x)}),dim=c(h_species,plant_species,Times))
@@ -134,25 +130,30 @@ true_interactions<-array(data=sapply(phi,function(x){rbinom(1,1,prob=x)}),dim=c(
 mdat<-dcast(melt(list(y=true_interactions,traitmatch=traitarray,resources=resources)),Var1+Var2+Var3~L1)
 colnames(mdat)<-c("Bird","Plant","Time","resources","traitmatch","True_state")
 
-#Merge the survey type
-mdat<-merge(mdat,data.frame(Time=1:Times,Survey_Type=mt))
-
 ##Observation models
 dat<-list()
-  
 for (x in 1:nrow(mdat)){
-  if(mdat$Survey_Type[x]=="Transect"){
-    df<-data.frame(Y_Transect=rbinom(2,mdat$True_state[x],prob=detection_trans))
-    dat[[x]]<-cbind(mdat[x,],df)
-  } else{
-        cams<-rpois(1,0.4)
-        if(cams==0){next}
-        df<-data.frame(Y_Camera=rbinom(cams,mdat$True_state[x],prob=detection_cam))
-        dat[[x]]<-cbind(mdat[x,],df)
+  #for each bird plant combo in that time period
+    timedat<-mdat[x,]
+    #Transects
+    Y_Transect=rbinom(3,timedat$True_state,prob=detection_trans)
+    out<-data.frame(Bird=timedat$Bird,Plant=timedat$Plant,Time=timedat$Time,Y_Transect)
+    
+    #Cameras
+    cams<-rpois(1,1)
+    if(!cams==0){
+    Y_Camera=rbinom(cams,mdat$True_state[x],prob=detection_cam)
+    out<-rbind_all(list(out,data.frame(Bird=timedat$Bird,Plant=timedat$Plant,Time=timedat$Time,Y_Camera)))
+    }
+    
+    dat[[x]]<-out
   }
-}
 
-mdat<-rbind_all(dat)
+odat<-rbind_all(dat)
+
+mdat<-merge(mdat,odat,by=c("Bird","Plant","Time"))
+#ARRANGE
+mdat <- mdat %>% arrange(Bird,Plant,Time)
 ```
 
 # Observed Data
@@ -161,7 +162,10 @@ mdat<-rbind_all(dat)
 ```r
 mdatm<-melt(mdat,measure.vars = c("True_state","Y_Camera","Y_Transect"))
 
-ggplot(mdatm,aes(x=traitmatch,y=value,col=variable)) + geom_point(alpha=.5) + geom_smooth(method="glm",method.args=list(family="binomial"),linetype="dashed",size=1.1) + ggtitle("Correlation in Simulated Data") + labs(x="Difference in Bill and Corolla Length (mm)",y="Probability of Interactions",col="Observation Process") + theme_bw()
+#label resource times
+mdatm$resources<-as.factor(mdatm$resources)
+levels(mdatm$resources)<-c("Low","High")
+ggplot(mdatm,aes(x=traitmatch,y=value,col=variable)) + geom_point(alpha=.5) + geom_smooth(method="glm",method.args=list(family="binomial"),linetype="dashed",size=1.1) + ggtitle("Correlation in Simulated Data") + labs(x="Difference in Bill and Corolla Length (mm)",y="Probability of Interactions",col="Observation Process") + theme_bw() + facet_wrap(~resources)
 ```
 
 ![](TwoDetectSimulation_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
@@ -169,8 +173,13 @@ ggplot(mdatm,aes(x=traitmatch,y=value,col=variable)) + geom_point(alpha=.5) + ge
 ```r
 #traitmatch dataframe
 Traitmatch<-mdat %>% group_by(Bird,Plant) %>% summarize(v=unique(traitmatch)) %>% acast(Bird~Plant,value.var="v")
-
 TimeResources<-mdat %>% group_by(Bird,Time,Plant) %>% summarize(v=unique(resources)) %>% acast(Bird~Plant~Time,value.var="v",fill=0)
+
+#label survey type
+mdat$Survey_Type<-NA
+mdat$Survey_Type<-is.na(mdat$Y_Transect)
+mdat$Survey_Type<-as.factor(mdat$Survey_Type)
+levels(mdat$Survey_Type)<-c("Transect","Camera")
 ```
 
 #Hierarchical Occupancy Model
@@ -217,117 +226,15 @@ $$\tau_{\alpha} \sim Uniform(0,100)$$
 $$\tau_{\beta_1} \sim Uniform(0,100)$$
 $$\tau_{\beta_2} \sim Uniform(0,100)$$
 
-**Derived quantities**
-
-$$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{\beta_1} = \sqrt[2]{\frac{1}{\tau_{\beta_1}}}$$
-$$\sigma_{\beta_2} = \sqrt[2]{\frac{1}{\tau_{\beta_2}}}$$
-
 # Analysis of observed data
 
 
 ```r
-paralleljags<-T
-
-if(paralleljags){
-    
 #Source model
 source("Bayesian/NmixturePoissonRagged2m.R")
 
 #print model
 writeLines(readLines("Bayesian/NmixturePoissonRagged2m.R"))
-
-#Input Data
-Dat <- c('Yobs_camera','Yobs_transect','Birds','Bird','Plant','Time','Plants','Times','resources','Nobs','cam_surveys','trans_surveys','Traitmatch')
-
-#Inits
-InitStage <- function(){
-  #A blank Y matrix - all present
-  initY<-array(dim=c(Birds,Plants,Times),data=1)
-  list(S=initY)}
-
-#Parameters to track
-ParsStage <- c("alpha","beta1","beta2","alpha_mu","alpha_sigma","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","dtrans","dcam")
-
-#MCMC options
-
-ni <- 100000  # number of draws from the posterior
-nt <- max(c(1,ni*.0001))  #thinning rate
-nb <- ni*.9 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-  Yobs_camera = mdat$Y_Camera
-  Yobs_transect = mdat$Y_Transect
-  Birds=max(mdat$Bird)
-  Bird=mdat$Bird
-  Plant=mdat$Plant
-  Time=mdat$Time
-  Plants=max(mdat$Plant)
-  Times=max(mdat$Time)
-  resources=TimeResources
-  Nobs=nrow(mdat)
-  cam_surveys=(mdat$Survey_Type=="Camera")*1
-  trans_surveys=(mdat$Survey_Type=="Transect")*1
-  Traitmatch=Traitmatch
-
-  m<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
-  
-} else {
-  
-#Source model
-source("Bayesian/NmixturePoissonRagged2m.R")
-
-#print model
-writeLines(readLines("Bayesian/NmixturePoissonRagged2m.R"))
-
-#Input Data
-Dat <- list(
-  Yobs_camera = mdat$Y_Camera,
-  Yobs_transect = mdat$Y_Transect,
-  Birds=max(mdat$Bird),
-  Bird=mdat$Bird,
-  Plant=mdat$Plant,
-  Time=mdat$Time,
-  Plants=max(mdat$Plant),
-  Times=max(mdat$Time),
-  resources=TimeResources,
-  Nobs=nrow(mdat),
-  cam_surveys=(mdat$Y_Camera>0)*1,
-  trans_surveys=(mdat$Y_Transect>0)*1,
-  Traitmatch=Traitmatch)
-
-#A blank Y matrix - all present
-initY<-array(dim=c(Dat$Birds,Dat$Plants,Dat$Times),data=max(mdat$Y_Transect,na.rm=T))
-initB<-as.numeric(matrix(nrow=h_species,ncol=1,data=.1))
-
-#Inits
-InitStage <- function(){list(S=initY)}
-
-#Parameters to track
-ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_slope1","sigma_slope2","gamma1","gamma2","dtrans","dcam")
-
-#MCMC options
-
-ni <- 20000  # number of draws from the posterior
-nt <- max(c(1,ni*.0001))  #thinning rate
-nb <- ni*.90 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-m = jags(inits=InitStage,
-         n.chains=nc,
-         model.file="Bayesian/NmixturePoissonRagged2m.jags",
-         working.directory=getwd(),
-         data=Dat,
-         parameters.to.save=ParsStage,
-         n.thin=nt,
-         n.iter=ni,
-         n.burnin=nb,
-         DIC=T)
-}
 ```
 
 ```
@@ -342,7 +249,7 @@ m = jags(inits=InitStage,
 ##     for (k in 1:Times){
 ##     
 ##     #Process Model
-##     logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] + resources[i,j,k]
+##     logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * resources[i,j,k] * Traitmatch[i,j]
 ##     
 ##     #True State
 ##     S[i,j,k] ~ dbern(rho[i,j,k])
@@ -408,29 +315,81 @@ m = jags(inits=InitStage,
 ## 
 ##       #Plant slope
 ##       beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
+##       
+##       #Interaction slope
+##       beta3[i] ~ dnorm(beta3_mu,beta3_tau)    
 ##     }
 ## 
 ##     #Group process priors
 ## 
 ##     #Intercept 
-##     alpha_mu~dnorm(0,0.386)
-##     alpha_tau ~ dunif(0,100)
+##     alpha_mu ~ dnorm(0,0.386)
+##     alpha_tau ~ dunif(0,1000)
 ##     alpha_sigma<-pow(1/alpha_tau,0.5) 
 ##     
 ##     #Trait
 ##     beta1_mu~dnorm(0,0.386)
-##     beta1_tau ~ dunif(0,100)
+##     beta1_tau ~ dunif(0,1000)
 ##     beta1_sigma<-pow(1/beta1_tau,0.5)
 ##     
 ##     #Resources
 ##     beta2_mu~dnorm(0,0.386)
-##     beta2_tau ~ dunif(0,100)
+##     beta2_tau ~ dunif(0,1000)
 ##     beta2_sigma<-pow(1/beta2_tau,0.5)
+## 
+##     #Interaction
+##     beta3_mu~dnorm(0,0.386)
+##     beta3_tau ~ dunif(0,1000)
+##     beta3_sigma<-pow(1/beta3_tau,0.5)
 ## 
 ## }
 ##     ",fill=TRUE)
 ## 
 ## sink()
+```
+
+```r
+#Input Data
+Dat <- c('Yobs_camera','Yobs_transect','Birds','Bird','Plant','Time','Plants','Times','resources','Nobs','cam_surveys','trans_surveys','Traitmatch')
+
+#Inits
+InitStage <- function(){
+  #A blank Y matrix - all present
+  initY<-array(dim=c(Birds,Plants,Times),data=1)
+  list(S=initY)}
+
+#Parameters to track
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam")
+
+#MCMC options
+
+ni <- 10000  # number of draws from the posterior
+nt <- max(c(1,ni*.00001))  #thinning rate
+nb <- ni*.92 # number to discard for burn-in
+nc <- 2  # number of chains
+
+#Jags
+
+  Yobs_camera = mdat$Y_Camera
+  Yobs_transect = mdat$Y_Transect
+  Birds=max(mdat$Bird)
+  Bird=mdat$Bird
+  Plant=mdat$Plant
+  Time=mdat$Time
+  Plants=max(mdat$Plant)
+  Times=max(mdat$Time)
+  resources=TimeResources
+  Nobs=nrow(mdat)
+  cam_surveys=(mdat$Survey_Type=="Camera")*1
+  trans_surveys=(mdat$Survey_Type=="Transect")*1
+  Traitmatch=Traitmatch
+
+  system.time(m<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+```
+
+```
+##    user  system elapsed 
+##    0.16    0.03  138.29
 ```
 
 
@@ -443,7 +402,7 @@ pars<-extract_par(m)
 
 ```r
 ###Chains
-ggplot(pars[pars$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level Probability")
+ggplot(pars[pars$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level Probability")
 ```
 
 ![](TwoDetectSimulation_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
@@ -457,7 +416,7 @@ ggplot(pars[pars$par %in% c("dcam","dtrans"),],aes(x=Draw,y=estimate,col=as.fact
 
 
 ```r
-ggplot(pars[pars$par %in% c("alpha_mu","alpha_sigma","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Regression") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("alpha_mu","alpha_sigma","beta1_mu","beta2_mu","beta3_mu","beta1_sigma","beta2_sigma","beta3_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Regression") + facet_wrap(~par,scales="free")
 ```
 
 ![](TwoDetectSimulation_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
@@ -467,10 +426,10 @@ ggplot(pars[pars$par %in% c("alpha_mu","alpha_sigma","beta1_mu","beta1_sigma","b
 
 ```r
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("alpha","beta1","beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
-tr<-melt(data.frame(species=1:h_species,alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
+tr<-melt(data.frame(species=1:h_species,alpha=alpha,beta1=beta1,beta2=beta2,beta3=beta3),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 #ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
@@ -478,10 +437,10 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 
 
 ```r
-p<-ggplot(pars[pars$par %in% c("beta1_mu","beta2_mu","alpha_mu","alpha_sigma","beta1_sigma","beta2_sigma","dcam","dtrans"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("beta1_mu","beta2_mu","beta3_mu","alpha_mu","alpha_sigma","beta1_sigma","beta2_sigma","beta3_sigma","dcam","dtrans"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(beta1_mu=beta1_mu,beta2_mu=beta2_mu,alpha_mu=alpha_mu,alpha_sigma=alpha_sigma,beta1_sigma=beta1_sigma,beta2_sigma=beta2_sigma,dtrans=detection_trans,dcam=detection_cam))
+tr<-melt(list(beta1_mu=beta1_mu,beta3_mu=beta3_mu,beta2_mu=beta2_mu,alpha_mu=alpha_mu,alpha_sigma=alpha_sigma,beta1_sigma=beta1_sigma,beta3_sigma=beta3_sigma,beta2_sigma=beta2_sigma,dtrans=detection_trans,dcam=detection_cam))
 
 colnames(tr)<-c("value","par")
 
@@ -495,16 +454,16 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 
 
 ```r
-castdf<-dcast(pars[pars$par %in% c("beta1_mu","beta2_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars[pars$par %in% c("beta1_mu","beta2_mu","beta3_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-trajF<-function(alpha,beta1,beta2,x,resources){
-  indat<-data.frame(alpha,beta1,beta2)
+trajF<-function(alpha,beta1,beta2,beta3,x,resources){
+  indat<-data.frame(alpha,beta1,beta2,beta3)
   
   #fit regression for each input estimate
   sampletraj<-list()
   
   for (y in 1:nrow(indat)){
-    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources)
+    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x * resources)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
   }
@@ -520,15 +479,37 @@ trajF<-function(alpha,beta1,beta2,x,resources){
 
 
 ```r
-predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=as.numeric(traitarray),resources=as.numeric(resources),beta2=castdf$beta2_mu)
+predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,beta2=castdf$beta2_mu,beta3=castdf$beta3_mu,x=as.numeric(traitarray),resources = as.numeric(TimeResources))
 
-orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,beta1_sigma),beta2=rnorm(2000,beta2_mu,beta2_sigma),x=as.numeric(traitarray),resources=as.numeric(resources))
+orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,beta1_sigma),beta2=rnorm(2000,beta2_mu,beta2_sigma),beta3=rnorm(2000,beta3_mu,beta3_sigma),x=as.numeric(traitarray),resources = as.numeric(TimeResources))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_point(data=mdat,aes(x=traitmatch,y=True_state),alpha=.5,size=.5)+ geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Probability of interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1)+ xlab("Difference between Bill and Corolla Length") 
+ggplot(data=predy,aes(x=x)) + geom_point(data=mdat,aes(x=traitmatch,y=True_state),alpha=.5,size=.5)+ geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Probability of interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1)+ xlab("Difference between Bill and Corolla Length") + geom_line(data=orig,aes(x=x,y=upper),col='grey50',linetype='dashed',size=0.5) + geom_line(data=orig,aes(x=x,y=lower),col='grey50',linetype='dashed',size=0.5)
 ```
 
 ![](TwoDetectSimulation_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+##With Interaction
+
+
+```r
+predH<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=mdat[mdat$resources==1,"traitmatch"],resources=mdat[mdat$resources==1,"resources"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
+
+predL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=mdat[mdat$resources==0,"traitmatch"],resources=mdat[mdat$resources==0,"resources"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
+
+predhl<-melt(list(High=predH,Low=predL),id.vars=colnames(predH))
+
+colnames(predhl)[5]<-"BFlowerL"
+
+mdat$BFlowerL<-factor(as.character(mdat$resources))
+levels(mdat$BFlowerL)<-c("Low","High")
+
+orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,beta1_sigma),beta2=rnorm(2000,beta2_mu,beta2_sigma),beta3=rnorm(2000,beta3_mu,beta3_sigma),x=as.numeric(traitarray),resources = as.numeric(TimeResources))
+
+ggplot(data=predhl,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=BFlowerL),alpha=0.6)  + geom_line(aes(y=mean,col=BFlowerL),size=.8) + theme_bw() + ylab("Probability of Interaction") + xlab("Difference between Bill and Corolla Length") + labs(fill="Resource Availability",col="Resource Availability") + geom_line(data=orig,aes(x=x,y=upper),col='grey50',linetype='dashed',size=0.5) + geom_line(data=orig,aes(x=x,y=lower),col='grey50',linetype='dashed',size=0.5)
+```
+
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 The true data is plotted overtop the simulation relationship in black, and the predicted relationship in dashed red with pink CI intervals.
 

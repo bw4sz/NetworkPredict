@@ -9,8 +9,7 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
-#+ beta2[i] + resources[i,j,k]
+    logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * resources[i,j,k] * Traitmatch[i,j]
     
     #True State
     S[i,j,k] ~ dbern(rho[i,j,k])
@@ -75,7 +74,10 @@ cat("
       beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
 
       #Plant slope
-      #beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
+      beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
+      
+      #Interaction slope
+      beta3[i] ~ dnorm(beta3_mu,beta3_tau)    
     }
 
     #Group process priors
@@ -91,9 +93,14 @@ cat("
     beta1_sigma<-pow(1/beta1_tau,0.5)
     
     #Resources
-    #beta2_mu~dnorm(0,0.386)
-    #beta2_tau ~ dunif(0,1000)
-    #beta2_sigma<-pow(1/beta2_tau,0.5)
+    beta2_mu~dnorm(0,0.386)
+    beta2_tau ~ dunif(0,1000)
+    beta2_sigma<-pow(1/beta2_tau,0.5)
+
+    #Interaction
+    beta3_mu~dnorm(0,0.386)
+    beta3_tau ~ dunif(0,1000)
+    beta3_sigma<-pow(1/beta3_tau,0.5)
 
 }
     ",fill=TRUE)
