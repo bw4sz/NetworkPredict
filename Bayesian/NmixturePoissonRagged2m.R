@@ -9,7 +9,8 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+    logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
+#+ beta2[i] + resources[i,j,k]
     
     #True State
     S[i,j,k] ~ dbern(rho[i,j,k])
@@ -59,7 +60,7 @@ cat("
     #sigma_dcam<-pow(1/tau_dcam,.5)
     
     #Group effect detect camera
-    #tau_dtrans ~ dunif(0,10)
+    #tau_dtrans ~ dunif(0,100)
     #sigma_dtrans<-pow(1/tau_dtrans,.5)
 
     #Process Model
@@ -68,47 +69,31 @@ cat("
       
       #Intercept
       #logit prior, then transform for plotting
-      lalpha[i] ~ dnorm(lintercept,ltau_alpha)
-      logit(alpha[i])<-lalpha[i]
-      
+      alpha[i] ~ dnorm(alpha_mu,alpha_tau)
+
       #Traits slope 
-      lbeta1[i] ~ dnorm(lgamma1,ltau_beta1)    
-      logit(beta1[i])<-lbeta1[i]
-      
+      beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
+
       #Plant slope
-      lbeta2[i] ~ dnorm(lgamma2,ltau_beta2)    
-      logit(beta2[i])<-lbeta2[i]
+      #beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
     }
 
     #Group process priors
-    #Logit prior for each, then transformed
-    
+
     #Intercept 
-    lintercept~dnorm(0,0.386)
-    logit(intercept)<-lintercept
-    
-    #Intercept variance
-    ltau_alpha ~ dt(0,1,1)I(0,)
-    logit(tau_alpha)<-ltau_alpha
-    sigma_alpha<-pow(1/tau_alpha,2) 
+    alpha_mu ~ dnorm(0,0.386)
+    alpha_tau ~ dunif(0,1000)
+    alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #Trait
-    lgamma1~dnorm(0,0.386)
-    logit(gamma1)<-lgamma1
-
-    #Resources
-    lgamma2~dnorm(0,0.386)
-    logit(gamma2)<-lgamma2
-
-    #Variance in Trait slope among species
-    ltau_beta1 ~ dt(0,1,1)I(0,)
-    logit(tau_beta1)<-ltau_beta1
-    sigma_slope1<-pow(1/tau_beta1,.5)
+    beta1_mu~dnorm(0,0.386)
+    beta1_tau ~ dunif(0,1000)
+    beta1_sigma<-pow(1/beta1_tau,0.5)
     
-    #Group Variance in Resources slope among species
-    ltau_beta2 ~ dt(0,1,1)I(0,)
-    logit(tau_beta2)<-ltau_beta2
-    sigma_slope2<-pow(1/tau_beta2,.5)
+    #Resources
+    #beta2_mu~dnorm(0,0.386)
+    #beta2_tau ~ dunif(0,1000)
+    #beta2_sigma<-pow(1/beta2_tau,0.5)
 
 }
     ",fill=TRUE)

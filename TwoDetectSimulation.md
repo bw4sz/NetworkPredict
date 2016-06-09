@@ -8,7 +8,6 @@ December 25, 2015
 
 
 
-
 ```r
 #load("Simulation_2M.RData")
 ```
@@ -21,28 +20,27 @@ Hummingbird Species =5
 
 Plant Species=6
 
-Survey Periods = 24
+Survey Periods = 50
 
 Detection Probability for Camera = 0.25
 
 Detection Probability for Transect = 0.6
 
+Hummingbird species are connected by the following hyperpriors
 
-Group Intercept
+* intercept<-1
 
-* intercept<-2.5
-
-* sigma_intercept<- 0.1
+* alpha_sigma<- 0.2
 
 Effect of Trait-matching
 
-* gamma1=-5
+* gamma1=-0.5
 
-* sigma_slope1<- 0.1
+* sigma_slope1<- 0.2
 
 Effect of Resources
 
-* gamma2=-2
+* gamma2=0
 
 * sigma_slope2<- 0.1
 
@@ -59,7 +57,6 @@ Corolla sizes
 
 Corolla<-rpois(plant_species,15)
 
-
 Survey periods are 70% cameras, 30% Transect
 Transects have two replicates.Cameras have variable number of replicates, modeled as rpois(lambda=0.5).
 
@@ -69,7 +66,7 @@ Resources are scored as either 'High' or 'Low' and is modeled as rbinom(n=1,size
 ```r
 h_species=5
 plant_species=6
-Times=24
+Times=50
 detection_cam=0.25
 detection_trans=0.6
 
@@ -85,7 +82,7 @@ Bill<-rpois(h_species,10)
 Corolla<-rpois(plant_species,15)
 
 #Subtract both and take absolute value
-traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
+traitmatch<-abs(sapply(Corolla,function(x) x - Bill))
 
 #fill out for each month
 traitarray<-array(NA,dim=c(h_species,plant_species,Times))
@@ -100,30 +97,33 @@ resources<-array(NA,dim=c(h_species,plant_species,Times))
 
 #fill for each month
 for (x in 1:Times){
-  resources[,,x]<-rbinom(1,1,0.5)  
+  resources[,,x]<-rpois(1,10)  
 }
 
 #standardize predictors
-resources<-array(data=scale(resources),dim=c(h_species,plant_species,Times))
+#resources<-array(data=scale(resources,center=TRUE,scale=TRUE),dim=c(h_species,plant_species,Times))
 
 #regression slope for trait-matching and resources
+
+#Intercept
+alpha_mu<-2
+alpha_sigma<- 0.05
+
 #trait match
-gamma1=-5
-intercept<-2.5
-sigma_slope1<- 0.1
-sigma_intercept<- 0.1
+beta1_mu=-0.5
+beta1_sigma<- 0.05
 
 #resources
-gamma2=0
-sigma_slope2<- 0.1
+beta2_mu=0
+beta2_sigma<- 0.05
 
 #loop through each species and plants
 
 #draw values from hierarcichal distributions
-beta1<-rnorm(h_species,gamma1,sigma_slope1)
-beta2<-rnorm(h_species,gamma2,sigma_slope2)
+beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
+beta2<-rnorm(h_species,beta2_mu, beta2_sigma)
 
-alpha<-rnorm(h_species,intercept,sigma_intercept)
+alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
 
 phi<-inv.logit(alpha + beta1 * traitarray + beta2 * resources)
 
@@ -132,7 +132,6 @@ true_interactions<-array(data=sapply(phi,function(x){rbinom(1,1,prob=x)}),dim=c(
 
 #combine and melt into a single datafFrame
 mdat<-dcast(melt(list(y=true_interactions,traitmatch=traitarray,resources=resources)),Var1+Var2+Var3~L1)
-
 colnames(mdat)<-c("Bird","Plant","Time","resources","traitmatch","True_state")
 
 #Merge the survey type
@@ -162,16 +161,16 @@ mdat<-rbind_all(dat)
 ```r
 mdatm<-melt(mdat,measure.vars = c("True_state","Y_Camera","Y_Transect"))
 
-ggplot(mdatm,aes(x=traitmatch,y=value,col=variable)) + geom_point(alpha=.5) + geom_smooth(method="glm",method.args=list(family="binomial"),linetype="dashed",size=1.1) + ggtitle("Correlation in Simulated Data") + labs(x="Difference in Bill and Corolla Length",y="Probability of Interactions",col="Observation Process") + theme_bw()
+ggplot(mdatm,aes(x=traitmatch,y=value,col=variable)) + geom_point(alpha=.5) + geom_smooth(method="glm",method.args=list(family="binomial"),linetype="dashed",size=1.1) + ggtitle("Correlation in Simulated Data") + labs(x="Difference in Bill and Corolla Length (mm)",y="Probability of Interactions",col="Observation Process") + theme_bw()
 ```
 
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-4-1.png)
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 ```r
 #traitmatch dataframe
 Traitmatch<-mdat %>% group_by(Bird,Plant) %>% summarize(v=unique(traitmatch)) %>% acast(Bird~Plant,value.var="v")
 
-TimeResources<-mdat %>% group_by(Time,Plant) %>% summarize(v=unique(resources)) %>% acast(Plant~Time,value.var="v",fill=0)
+TimeResources<-mdat %>% group_by(Bird,Time,Plant) %>% summarize(v=unique(resources)) %>% acast(Bird~Plant~Time,value.var="v",fill=0)
 ```
 
 #Hierarchical Occupancy Model
@@ -208,15 +207,15 @@ $$\beta_{2,i} \sim Normal(\mu_{\beta_2},\tau_{\beta_2})$$
 
 Group Level Means
 
-$$\mu_{\beta_1} \sim Normal(0,0.0001)$$
-$$\mu_{\beta_2} \sim Normal(0,0.0001)$$
-$$ \mu_{\alpha} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_1} \sim Normal(0,1.67)$$
+$$\mu_{\beta_2} \sim Normal(0,1.67)$$
+$$ \mu_{\alpha} \sim Normal(0,1.67)$$
 
 Group Level Variance
 
-$$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
-$$\tau_{\beta_1} \sim Gamma(0.0001,0.0001)$$
-$$\tau_{\beta_2} \sim Gamma(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim Uniform(0,100)$$
+$$\tau_{\beta_1} \sim Uniform(0,100)$$
+$$\tau_{\beta_2} \sim Uniform(0,100)$$
 
 **Derived quantities**
 
@@ -245,18 +244,16 @@ Dat <- c('Yobs_camera','Yobs_transect','Birds','Bird','Plant','Time','Plants','T
 InitStage <- function(){
   #A blank Y matrix - all present
   initY<-array(dim=c(Birds,Plants,Times),data=1)
-  initB<-as.numeric(matrix(nrow=Birds,ncol=1,data=.1))
-
-list(beta1=initB,beta2=initB,alpha=rep(.5,Birds),intercept=0,tau_alpha=0.1,tau_beta1=0.1,tau_beta2=0.1,gamma1=0,gamma2=0,S=initY)}
+  list(S=initY)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_slope1","sigma_slope2","gamma1","gamma2","dtrans","dcam")
+ParsStage <- c("alpha","beta1","beta2","alpha_mu","alpha_sigma","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","dtrans","dcam")
 
 #MCMC options
 
-ni <- 2000  # number of draws from the posterior
+ni <- 100000  # number of draws from the posterior
 nt <- max(c(1,ni*.0001))  #thinning rate
-nb <- ni*.85 # number to discard for burn-in
+nb <- ni*.9 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -306,14 +303,14 @@ initY<-array(dim=c(Dat$Birds,Dat$Plants,Dat$Times),data=max(mdat$Y_Transect,na.r
 initB<-as.numeric(matrix(nrow=h_species,ncol=1,data=.1))
 
 #Inits
-InitStage <- function(){list(beta1=initB,beta2=initB,beta3=initB,alpha=rep(.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta1=0.1,tau_beta2=0.1,tau_beta3=0.1,gamma1=0,gamma2=0,gamma3=0,dtrans=0.5,dcam=0.5,N=initY)}
+InitStage <- function(){list(S=initY)}
 
 #Parameters to track
 ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_slope1","sigma_slope2","gamma1","gamma2","dtrans","dcam")
 
 #MCMC options
 
-ni <- 2000  # number of draws from the posterior
+ni <- 20000  # number of draws from the posterior
 nt <- max(c(1,ni*.0001))  #thinning rate
 nb <- ni*.90 # number to discard for burn-in
 nc <- 2  # number of chains
@@ -339,33 +336,33 @@ m = jags(inits=InitStage,
 ## 
 ## cat("
 ##     model {
-##     #Compute intensity for each pair of birds and plants
+##     #Compute true state for each pair of birds and plants
 ##     for (i in 1:Birds){
 ##     for (j in 1:Plants){
 ##     for (k in 1:Times){
 ##     
 ##     #Process Model
-##     logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[j,k]
+##     logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] + resources[i,j,k]
 ##     
-##     #True number of interactions
+##     #True State
 ##     S[i,j,k] ~ dbern(rho[i,j,k])
 ##     }
 ##     }
 ##     }
-## 
-##     #Observed counts for each day of sampling
+##     
+##     #Observation Model
 ##     for (x in 1:Nobs){
 ##     
 ##     #Observation Process for cameras
-##     detect_cam[x]<-dcam[Bird[x]] * cam_surveys[x]
+##     detect_cam[x]<-dcam * cam_surveys[x]
 ## 
 ##     #Observation Process for transects
-##     detect_transect[x]<-dtrans[Bird[x]] * trans_surveys[x]
+##     detect_transect[x]<-dtrans * trans_surveys[x]
 ## 
-##     Yobs_camera[x] ~ dbin(detect_cam[x],S[Bird[x],Plant[x],Time[x]])    
-##     Yobs_transect[x] ~ dbin(detect_transect[x],S[Bird[x],Plant[x],Time[x]])    
+##     Yobs_camera[x] ~ dbern(detect_cam[x] * S[Bird[x],Plant[x],Time[x]])    
+##     Yobs_transect[x] ~ dbern(detect_transect[x] * S[Bird[x],Plant[x],Time[x]])    
 ## 
-##     #Assess Model Fit
+##     #Assess Model Fit - Posterior predictive check
 ## 
 ##     #Fit discrepancy statistics
 ##     #eval[x]<-detect[Bird[x]]*S[Bird[x],Plant[x],Camera[x]]
@@ -376,56 +373,59 @@ m = jags(inits=InitStage,
 ##     
 ##     }
 ## 
-##     #Species level priors
+##     #Priors
+##     #Observation model
+##     #Detect priors, logit transformed - Following lunn 2012 p85
 ##     
-##     for (i in 1:Birds){
-##     #Detect priors, logit transformed
-## 
 ##     #For Cameras
-##     logit(dcam[i]) <- dcam_logit[i]
-##     dcam_logit[i] ~ dnorm(dprior_cam,tau_dcam)
+##     dcam ~ dunif(0,1)
 ## 
 ##     #For Transects
-##     logit(dtrans[i]) <- dtrans_logit[i]
-##     dtrans_logit[i] ~ dnorm(dprior_trans,tau_dtrans)
-## 
-##     alpha[i] ~ dnorm(intercept,tau_alpha)
-##     beta1[i] ~ dnorm(gamma1,tau_beta1)    
-##     beta2[i] ~ dnorm(gamma2,tau_beta2)    
-##     }
-## 
-##     #Hyperpriors
-##     #Slope grouping
-##     gamma1~dnorm(0,0.0001)
-##     gamma2~dnorm(0,0.0001)
-##     gamma3~dnorm(0,0.0001)
-##     
-##     #Intercept grouping
-##     intercept~dnorm(0,0.0001)
+##     dtrans ~ dunif(0,1)
 ##     
 ##     #Detection group prior
-##     dprior_cam ~ dnorm(0,0.5)
-##     dprior_trans ~ dnorm(0,0.5)
-## 
-##     # Group intercept variance
-##     tau_alpha ~ dgamma(0.0001,0.0001)
-##     sigma_alpha<-pow(1/tau_alpha,2) 
+##     #dprior_cam ~ dnorm(0,0.386)
+##     #dprior_trans ~ dnorm(0,0.386)
 ##     
 ##     #Group effect detect camera
-##     tau_dcam ~ dunif(0,10)
-##     sigma_dcam<-pow(1/tau_dcam,.5)
+##     #tau_dcam ~ dunif(0,10)
+##     #sigma_dcam<-pow(1/tau_dcam,.5)
 ##     
 ##     #Group effect detect camera
-##     tau_dtrans ~ dunif(0,10)
-##     sigma_dtrans<-pow(1/tau_dtrans,.5)
+##     #tau_dtrans ~ dunif(0,100)
+##     #sigma_dtrans<-pow(1/tau_dtrans,.5)
 ## 
-##     #Group Effect of traits
-##     tau_beta1 ~ dgamma(0.0001,0.0001)
-##     sigma_slope1<-pow(1/tau_beta1,.5)
+##     #Process Model
+##     #Species level priors
+##     for (i in 1:Birds){
+##       
+##       #Intercept
+##       #logit prior, then transform for plotting
+##       alpha[i] ~ dnorm(alpha_mu,alpha_tau)
+## 
+##       #Traits slope 
+##       beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
+## 
+##       #Plant slope
+##       beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
+##     }
+## 
+##     #Group process priors
+## 
+##     #Intercept 
+##     alpha_mu~dnorm(0,0.386)
+##     alpha_tau ~ dunif(0,100)
+##     alpha_sigma<-pow(1/alpha_tau,0.5) 
 ##     
-##     #Group Effect of Resources
-##     tau_beta2 ~ dgamma(0.0001,0.0001)
-##     sigma_slope2<-pow(1/tau_beta2,.5)
+##     #Trait
+##     beta1_mu~dnorm(0,0.386)
+##     beta1_tau ~ dunif(0,100)
+##     beta1_sigma<-pow(1/beta1_tau,0.5)
+##     
+##     #Resources
+##     beta2_mu~dnorm(0,0.386)
+##     beta2_tau ~ dunif(0,100)
+##     beta2_sigma<-pow(1/beta2_tau,0.5)
 ## 
 ## }
 ##     ",fill=TRUE)
@@ -446,21 +446,21 @@ pars<-extract_par(m)
 ggplot(pars[pars$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level Probability")
 ```
 
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-7-1.png)
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 
 ```r
 ggplot(pars[pars$par %in% c("dcam","dtrans"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(~par,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-8-1.png)
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 
 ```r
-ggplot(pars[pars$par %in% c("gamma1","gamma2","sigma_alpha","sigma_slope1","sigma_slope2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Regression") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("alpha_mu","alpha_sigma","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Regression") + facet_wrap(~par,scales="free")
 ```
 
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-9-1.png)
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 ###Posteriors
 
@@ -478,10 +478,10 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 
 
 ```r
-p<-ggplot(pars[pars$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_slope1","sigma_slope2","dcam","dtrans"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("beta1_mu","beta2_mu","alpha_mu","alpha_sigma","beta1_sigma","beta2_sigma","dcam","dtrans"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_intercept,sigma_slope1=sigma_slope1,sigma_slope2=sigma_slope2,dtrans=detection_trans,dcam=detection_cam))
+tr<-melt(list(beta1_mu=beta1_mu,beta2_mu=beta2_mu,alpha_mu=alpha_mu,alpha_sigma=alpha_sigma,beta1_sigma=beta1_sigma,beta2_sigma=beta2_sigma,dtrans=detection_trans,dcam=detection_cam))
 
 colnames(tr)<-c("value","par")
 
@@ -489,13 +489,13 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 #ggsave("Figures/SimulationH.jpg",dpi=300,height=4,width=10)
 ```
 
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-12-1.png)
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 ###Predicted Relationship 
 
 
 ```r
-castdf<-dcast(pars[pars$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars[pars$par %in% c("beta1_mu","beta2_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
 trajF<-function(alpha,beta1,beta2,x,resources){
   indat<-data.frame(alpha,beta1,beta2)
@@ -520,92 +520,17 @@ trajF<-function(alpha,beta1,beta2,x,resources){
 
 
 ```r
-predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitarray),resources=as.numeric(resources),beta2=castdf$gamma2)
+predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=as.numeric(traitarray),resources=as.numeric(resources),beta2=castdf$beta2_mu)
 
-orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta1=rnorm(2000,gamma1,sigma_slope1),beta2=rnorm(2000,gamma2,sigma_slope2),x=as.numeric(traitarray),resources=as.numeric(resources))
+orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,beta1_sigma),beta2=rnorm(2000,beta2_mu,beta2_sigma),x=as.numeric(traitarray),resources=as.numeric(resources))
 
 #plot and compare to original data
 ggplot(data=predy,aes(x=x)) + geom_point(data=mdat,aes(x=traitmatch,y=True_state),alpha=.5,size=.5)+ geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Probability of interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1)+ xlab("Difference between Bill and Corolla Length") 
 ```
 
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-14-1.png)
+![](TwoDetectSimulation_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 The true data is plotted overtop the simulation relationship in black, and the predicted relationship in dashed red with pink CI intervals.
-
-#Predicted Networks
-
-Generate a binary network from the model. Given the uncertainty, this analysis will be done many times to calculate network metrics. 
-
-##
-Function to create a network from posteriors.
-
-## Trait Model
-
-
-```r
-spdf<-dcast(pars[pars$par %in% c("alpha","beta1","beta2"),], Chain + species+  Draw~par,value.var="estimate")
-
-trait_model<-matrix(nrow=h_species,ncol=plant_species)
-colnames(trait_model)<-1:ncol(trait_model)
-rownames(trait_model)<-1:nrow(trait_model)
-
-for( x in 1:h_species){
-    spdat<-filter(spdf,species==x)
-    draw<-spdat[sample(1:nrow(spdat),1),]
-    
-    #For each plant species create a deviate
-    for (y in 1:plant_species){
-      prob=inv.logit(draw$alpha + draw$beta1 * traitmatch[x,y])
-      trait_model[x,y]<-rbinom(1,1,prob)
-    }
-}
-
-plotweb(trait_model)
-```
-
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-15-1.png)
-
-## Abundance Model
-
-Just for month #1.
-
-
-```r
-spdf<-dcast(pars[pars$par %in% c("alpha","beta1","beta2"),], Chain + species+  Draw~par,value.var="estimate")
-
-abundance_model<-matrix(nrow=h_species,ncol=plant_species)
-colnames(abundance_model)<-1:ncol(abundance_model)
-rownames(abundance_model)<-1:nrow(abundance_model)
-
-for( x in 1:h_species){
-    spdat<-filter(spdf,species==x)
-    draw<-spdat[sample(1:nrow(spdat),1),]
-    
-    #For each plant species create a deviate
-    for (y in 1:plant_species){
-      prob=inv.logit(draw$alpha + draw$beta2 * resources[y,1])
-      abundance_model[x,y]<-rbinom(1,1,prob)
-    }
-}
-
-plotweb(abundance_model)
-```
-
-![](TwoDetectSimulation_files/figure-html/unnamed-chunk-16-1.png)
-
-# Compare Networks
-
-
-
-# Consensus Network
-
-* Highlight Trait links as red
-* Highlgiht Abundance links as blue
-* Highlgiht joint links as purple
-* Highlight Missed links as black
-
-
-
 
 
 ```r

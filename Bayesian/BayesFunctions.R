@@ -20,7 +20,6 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   #Species
   #sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Bird]
   
-  
   #Plant
   #add a NA plant columns
   #sp_pl$plant<-NA
@@ -46,7 +45,7 @@ trajState<-function(alpha,beta,x,observed){
   for (s in 1:nrow(fdat)){
     a<-fdat$alpha[s]
     b<-fdat$beta[s]
-    yp=inv.logit(a + (b*x$value))
+    yp=inv.logit(a + b*x$value)
     
     #compute pred value
     state<-data.frame(x,State=rpois(length(yp),yp))

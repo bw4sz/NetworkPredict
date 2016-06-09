@@ -1,0 +1,18 @@
+{
+    "contents" : "a<-rbinom(1e5,1,prob=detection_trans)\ntable(a)/length(a)\n\na<-rbinom(1,1,prob=detection_trans)\ntable(a)/length(a)\n",
+    "created" : 1465310718363.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "3439480889",
+    "id" : "B6C0DD0E",
+    "lastKnownWriteTime" : 21955250054430836,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
