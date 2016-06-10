@@ -40,7 +40,10 @@ load("Observed.RData")
 #View Raw Data
 ```{r}
 ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial"))
-glm(data=indat,Yobs~Traitmatch*BUsed_Flowers,family="binomial")
+
+ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) 
+
+glm(data=indat,Yobs~Traitmatch*(BAll_Flowers),family="binomial")
 ```
 
 #Hierarchical Occupancy Model
@@ -73,10 +76,10 @@ $$\mu_\beta_3 \sim Normal(0,0.0001)$$
 
 Group Level Variance
 
-$$\tau_\alpha \sim Half-Cauchy(0,1,1)$$
-$$\tau_\beta_1 \sim Half-Cauchy(0,1,1)$$
-$$\tau_\beta_2 \sim Half-Cauchy(0,1,1)$$
-$$\tau_\beta_3 \sim Half-Cauchy(0,1,1)$$
+$$\tau_{\alpha} \sim Uniform(0,1000)$$
+$$\tau_{\beta_1} \sim Uniform(0,1000)$$
+$$\tau_{\beta_2} \sim Uniform(0,1000)$$
+$$\tau_{\beta_3} \sim Uniform(0,1000)$$
 
 ```{r,eval=T,strip.white=T}
 #Source model
@@ -84,9 +87,6 @@ source("Bayesian/NmixturePoissonRagged2m.R")
 
 #print model
 writeLines(readLines("Bayesian/NmixturePoissonRagged2m.R"))
-
-#Input Data
-Dat <- c('Yobs_camera','Yobs_transect','Birds','Bird','Plant','Time','Plants','Times','resources','Nobs','cam_surveys','trans_surveys','Traitmatch')
 
 #Inits
 InitStage <- function(){
@@ -99,23 +99,23 @@ ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_s
 
 
 #Jags Data
-
-  Yobs_camera = indat$Camera
-  Yobs_transect = indat$Transect
-  Birds=max(indat$jBird)
-  Bird=indat$jBird
-  Plant=indat$jPlant
-  Time=indat$jTime
-  Plants=max(indat$jPlant)
-  Times=max(indat$jTime)
-  resources=resourceMatrix
-  Nobs=nrow(indat)
-  cam_surveys= (indat$Survey_Type=="Camera")*1
-  trans_surveys= (indat$Survey_Type=="Transect")*1
-  Traitmatch=jTraitmatch
+Dat<-list(
+  Yobs_camera = indat$Camera,
+  Yobs_transect = indat$Transect,
+  Birds=max(indat$jBird),
+  Bird=indat$jBird,
+  Plant=indat$jPlant,
+  Time=indat$jTime,
+  Plants=max(indat$jPlant),
+  Times=max(indat$jTime),
+  resources=resourceMatrix,
+  Nobs=nrow(indat),
+  cam_surveys= (indat$Survey_Type=="Camera")*1,
+  trans_surveys= (indat$Survey_Type=="Transect")*1,
+  Traitmatch=jTraitmatch)
 
   #MCMC options
-  system.time(m2<-jags(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=10000,n.burnin=9500,n.chains=2,DIC=F))
+  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99500,n.chains=2,DIC=F))
 ```
 
 ```{r,eval=F}
@@ -256,8 +256,8 @@ for(d in 1:length(species.split)){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
 
-  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==0,"scaledR"],x=billd[billd$ BUsed_Flowers==0,"Traitmatch"],type='quantile')
-  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==1,"scaledR"],x=billd[billd$ BUsed_Flowers==1,"Traitmatch"],type='quantile')
+  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==0,"scaledR"],x=billd[billd$ BAll_Flowers==0,"Traitmatch"],type='quantile')
+  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==1,"scaledR"],x=billd[billd$ BAll_Flowers==1,"Traitmatch"],type='quantile')
   sm<-melt(list(High=sh,Low=sl),id.vars=colnames(sl))
   colnames(sm)[5]<-"Resources"
   species.traj[[d]]<-sm
@@ -420,7 +420,7 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-p<-ggplot(species.mean,aes(x=TotalCorolla,y=phi)) + geom_line(size=.9) + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + facet_wrap(~Hummingbird,ncol=3,scales="free_y")  + theme_bw() + ylab("Probability of Interaction") + scale_color_manual("Resource Availability",labels=c("Low","High"),values=c("Blue","Red")) + xlab("Flower Corolla Length (mm)") 
+p<-ggplot(species.mean,aes(x=TotalCorolla,y=phi,col=as.factor(r))) + geom_line(size=.9) + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + facet_wrap(~Hummingbird,ncol=3,scales="free_y")  + theme_bw() + ylab("Probability of Interaction") + scale_color_manual("Resource Availability",labels=c("Low","High"),values=c("Blue","Red")) + xlab("Flower Corolla Length (mm)") 
 p
 ggsave("Figures/ResponseCurves.jpeg",height=6.5,width=9)
 ```
@@ -434,8 +434,11 @@ Density curves
 #Niche Breadth 
 
 ```{r}
-species.mean<-species.traj %>% group_by(jBird,jPlant) %>% summarize(Traitmatch=unique(x),phi=mean(y),phi_low=quantile(y,0.05),phi_high=quantile(y,0.95))
-species.mean<-merge(species.mean,indat[,colnames(indat) %in% c("jBird","jPlant","jTime","Hummingbird","Iplant_Double"," BAll_Flowers")])
+species.mean<-species.traj %>% group_by(jBird,jPlant,r) %>% summarize(Traitmatch=unique(x),phi=mean(y),phi_low=quantile(y,0.05),phi_high=quantile(y,0.95))
+
+#merge names
+species.mean<-merge(species.mean,jagsIndexBird)
+species.mean<-merge(species.mean,jagsIndexPlants)
 
 #get corolla sizes
 species.mean<-merge(species.mean,fl.morph,by.x="Iplant_Double", by.y="Group.1")
@@ -447,37 +450,37 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-ggplot(species.mean) + geom_ribbon(alpha=0.2,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)")
+ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(r))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(r))) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability") + ylim(0,1)
 ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
 ```
 
 #Generate network
 
 ```{r}
-makeN<-function(dat){
-  trait_model<-matrix(nrow=Birds,ncol=Plants)
-colnames(trait_model)<-jagsIndexPlants$Iplant_Double
-rownames(trait_model)<-jagsIndexBird$Hummingbird
+#Split by resource
+nsplit<-split(species.mean,species.mean$r)
 
-for(x in 1:Birds){
-    spdat<-filter(dat,species==x)
-    draw<-spdat[sample(1:nrow(spdat),1),]
-    
-    #For each plant species create a deviate
-    for (y in 1:Plants){
-      prob=inv.logit(draw$alpha + draw$beta1 * jTraitmatch[x,y])
-      trait_model[x,y]<-rbinom(1,1,prob)
-    }
-    #calculate network statistic
-}
-  nstat<-networklevel(trait_model,index=c("connectance","nestedness"))
+makeN<-function(x){
+  
+  #input matrix
+  aggm<-matrix(nrow=nrow(jagsIndexBird),ncol=nrow(jagsIndexPlants),data=0)
+  for (j in 1:nrow(x)){
+    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
+  }
+  #calculate network statistic
+  nstat<-networklevel(aggm,index=c("connectance","nestedness"))
 }
 
-netstat<-melt(t(sapply(1:100,function(x) makeN(castdf))))
-colnames(netstat)<-c("Iteration","Metric","value")
+nstat<-lapply(nsplit,function(x){
+  netstat<-melt(t(sapply(1:500,function(k) makeN(x)))) 
+  colnames(netstat)<-c("Iteration","Metric","value")
+  return(netstat)
+})
 
-ggplot(netstat,aes(x=value,fill=Metric)) + geom_density() + facet_wrap(~Metric,scales='free')
-#need an alpha overlay on links
+names(nstat)<-c("Low","High")
+nstat<-melt(nstat,colnames(nstat[[1]]))
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Resource Availability")
 ```
 
 ```{r}
