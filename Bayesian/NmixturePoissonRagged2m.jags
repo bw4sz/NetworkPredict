@@ -18,10 +18,10 @@
     for (x in 1:Nobs){
     
     #Observation Process for cameras
-    detect_cam[x]<-dcam * cam_surveys[x]
+    detect_cam[x]<-dcam[Bird[x]] * cam_surveys[x]
 
     #Observation Process for transects
-    detect_transect[x]<-dtrans * trans_surveys[x]
+    detect_transect[x]<-dtrans[Bird[x]] * trans_surveys[x]
 
     Yobs_camera[x] ~ dbern(detect_cam[x] * S[Bird[x],Plant[x],Time[x]])    
     Yobs_transect[x] ~ dbern(detect_transect[x] * S[Bird[x],Plant[x],Time[x]])    
@@ -41,23 +41,25 @@
     #Observation model
     #Detect priors, logit transformed - Following lunn 2012 p85
     
-    #For Cameras
-    dcam ~ dunif(0,1)
-
-    #For Transects
-    dtrans ~ dunif(0,1)
+    for(x in 1:Birds){
+      #For Cameras
+      dcam[x] ~ dnorm(dprior_cam,tau_dcam)
+  
+      #For Transects
+      dtrans[x] ~ dnorm(dprior_trans,tau_dtrans)
+    }
     
     #Detection group prior
-    #dprior_cam ~ dnorm(0,0.386)
-    #dprior_trans ~ dnorm(0,0.386)
+    dprior_cam ~ dnorm(0,0.386)
+    dprior_trans ~ dnorm(0,0.386)
     
     #Group effect detect camera
-    #tau_dcam ~ dunif(0,10)
-    #sigma_dcam<-pow(1/tau_dcam,.5)
+    tau_dcam ~ dunif(0,1000)
+    sigma_dcam<-pow(1/tau_dcam,.5)
     
     #Group effect detect camera
-    #tau_dtrans ~ dunif(0,100)
-    #sigma_dtrans<-pow(1/tau_dtrans,.5)
+    tau_dtrans ~ dunif(0,1000)
+    sigma_dtrans<-pow(1/tau_dtrans,.5)
 
     #Process Model
     #Species level priors

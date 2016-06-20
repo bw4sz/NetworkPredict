@@ -1,0 +1,18 @@
+{
+    "contents" : "indat %>% select(Hummingbird,Iplant_Double,Yobs,Traitmatch,DateP,FlowerA,Pierce) %>% filter(Yobs==1,!Pierce==\"Y\") %>% group_by(Hummingbird) %>% filter(Traitmatch==max(Traitmatch)) %>% as.data.frame()\n",
+    "created" : 1465310718363.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "4289775700",
+    "id" : "B6C0DD0E",
+    "lastKnownWriteTime" : 21955250054430836,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

@@ -39,21 +39,27 @@ load("Observed.RData")
 
 #View Raw Data
 ```{r}
-ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial"))
+ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
-ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) 
+ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) 
 
-glm(data=indat,Yobs~Traitmatch*(BAll_Flowers),family="binomial")
+m<-glm(data=indat,Yobs~Traitmatch*scaledR,family="binomial")
+summary(m)
 ```
 
 #Hierarchical Occupancy Model
 
-For hummingbird species i feeding on plant species j observed at time k and sampling event d. 
+For hummingbird species i feeding on plant species j observed at time k and sampling event observed by transect (YTransect) or camera (YCamera)
+
+Observation Model:
 
 $$ YTransect_{i,j,k,d} \sim Bernoulli(\omega_{Transect}) $$
 $$ YCamera_{i,j,k,d} \sim Bernoulli(\omega_{Camera}) $$
 $$ \omega_{Camera} <- \phi_{Camera} * EffortCamera_k $$
 $$ \omega_{Transect} <- \phi_{Transect}* EffortTransect_k $$
+
+Process Model:
+
 $$ p_{i,j,k} \sim Bernoulli(\rho_{i,j,k}) $$
 $$ logit(\rho_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i} *Resources_k + \beta_{3,i} * Traitmatch_{i,j} * Resources_k $$
 
@@ -62,20 +68,17 @@ $$ logit(\rho_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i}
 $$ \phi_{Camera} \sim U(0,1) $$
 $$ \phi_{Transect} \sim U(0,1) $$
 $$\alpha_i \sim Normal(\alpha_mu,\alpha_\tau)$$
-$$\beta_{1,i} \sim Normal(\mu_\beta_1,\tau_beta_1)$$
-$$\beta_{2,i} \sim Normal(\mu_\beta_2,\tau_beta_2)$$
-$$\beta_{3,i} \sim Normal(\mu_\beta_3,\tau_beta_3)$$
-
-**Hyperpriors**
+$$\beta_{1,i} \sim Normal(\mu_{\beta_1,\tau_beta_1})$$
+$$\beta_{2,i} \sim Normal(\mu_{\beta_2,\tau_beta_2})$$
+$$\beta_{3,i} \sim Normal(\mu_{\beta_3,\tau_beta_3})$$
 
 Group Level Means
 $$ \mu_\alpha \sim Normal(0,0.0001)$$
-$$\mu_\beta_1 \sim Normal(0,0.0001)$$
-$$\mu_\beta_2 \sim Normal(0,0.0001)$$
-$$\mu_\beta_3 \sim Normal(0,0.0001)$$
+$$\mu_{\beta_1} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_2} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_3} \sim Normal(0,0.0001)$$
 
 Group Level Variance
-
 $$\tau_{\alpha} \sim Uniform(0,1000)$$
 $$\tau_{\beta_1} \sim Uniform(0,1000)$$
 $$\tau_{\beta_2} \sim Uniform(0,1000)$$
@@ -92,10 +95,11 @@ writeLines(readLines("Bayesian/NmixturePoissonRagged2m.R"))
 InitStage <- function(){
   #A blank Y matrix - all present
   initY<-array(dim=c(Birds,Plants,Times),1)
-list(S=initY)}
+  initB<-rep(0.5,Birds)
+list(S=initY,dcam=initB,dtrans=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam","dprior_cam","dprior_trans")
 
 
 #Jags Data
@@ -115,7 +119,7 @@ Dat<-list(
   Traitmatch=jTraitmatch)
 
   #MCMC options
-  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99500,n.chains=2,DIC=F))
+  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=80000,n.burnin=79000,n.chains=2,DIC=F))
 ```
 
 ```{r,eval=F}
@@ -138,12 +142,12 @@ pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
-```{r,fig.height=10}
-ggplot(pars_detect[pars_detect$par %in% c("dcam","dtrans"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_wrap(~par,scale="free",ncol=4) + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
+```{r,fig.height=5}
+ggplot(pars_detect[pars_detect$par %in% c("dcam","dtrans"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("dcam_prior","dtrans_prior","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
 ```
 
 #Posteriors
@@ -153,13 +157,20 @@ ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta1_sigma","beta2_mu","b
 ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=estimate)) + geom_histogram(position='identity') +  facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Parameters")
 ```
 
-```{r,cache=FALSE,fig.width=10,fig.height=10}
+```{r,cache=FALSE,fig.width=8,fig.height=6}
 #Detection figure
-ggplot(pars_detect[pars_detect$par %in% c("dtrans","dcam"),],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + scale_x_discrete(labels=c("Camera","Transect"))
+pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all=T)
+ggplot(pars_detect[pars_detect$par %in% c("dtrans","dcam"),],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + scale_x_discrete(labels=c("Camera","Transect")) + facet_wrap(~Hummingbird)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
-ggplot(pars_detect[pars_detect$par %in% c("beta3_mu","beta3_sigma","beta2_mu","beta2_sigma","beta1_mu","beta1_sigma","alpha_mu","alpha_sigma"),],aes(x=estimate)) + geom_histogram() + ggtitle("Group Level Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+ggplot(pars_detect[pars_detect$par %in% c("beta3_mu","beta3_sigma","beta2_mu","beta2_sigma","beta1_mu","beta1_sigma","alpha_mu","alpha_sigma","dprior_cam","dprior_trans"),],aes(x=estimate)) + geom_histogram() + ggtitle("Group Level Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+```
+
+#Detection Table
+```{r}
+detecttable<-group_by(pars_detect,Hummingbird,par) %>% filter(par %in% c('dcam','dtrans')) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+detecttable
 ```
 
 #Predicted Relationship 
@@ -323,18 +334,17 @@ These plots can be tricky to interpret if one forgets that trait matching as a c
 Let's take a closer look at distribution of interaction effect posteriors values for each species.
 
 ```{r,eval=F}
-post<-pars_detect %>% filter(par %in% "beta3") %>% group_by(species) %>% summarize(mean=mean(estimate),median=median(estimate),lower=quantile(probs=0.025,estimate),upper=quantile(probs=0.975,estimate),quantile_l=quantile(estimate)[[1]],quantile_u=quantile(estimate)[[2]]) %>% melt(id.vars='species')
-ggplot(pars_detect[pars_detect$par %in% "beta3",],aes(x=estimate)) + geom_histogram() + facet_wrap(~species,scales='free',ncol=3) + geom_vline(data=post,aes(xintercept=value,col=variable))
+post<-pars_detect %>% filter(par %in% "beta3") %>% group_by(Hummingbird) %>% summarize(mean=mean(estimate),median=median(estimate),lower=quantile(probs=0.025,estimate),upper=quantile(probs=0.975,estimate)) %>% melt(id.vars='Hummingbird')
+ggplot(pars_detect[pars_detect$par %in% "beta3",],aes(x=estimate)) + geom_histogram() + facet_wrap(~Hummingbird,scales='free',ncol=4) + geom_vline(data=post,aes(xintercept=value,col=variable))
 ```
 
-##Traitmatching and Bill Length
+##Trait-matching and Bill Length
 
 Do species with long bill lengths have positive traitmatching effects?
 
 ```{r,fig.height=7,fig.width=8}
 #species names
 b<-pars_detect[pars_detect$par %in% "beta1",]
-b<-merge(b,jagsIndexBird,by.x="species",by.y="jBird")
 
 #traits
 b<-merge(b,hum.morph,by.x="Hummingbird",by.y="English")
@@ -345,7 +355,7 @@ post<-b %>% filter(par %in% "beta1") %>% group_by(Hummingbird) %>% summarize(mea
 ord<-post %>% filter(variable=="mean") %>% arrange(value) %>% .$Hummingbird
 
 b$Hummingbird<-factor(b$Hummingbird,levels=ord)
-ggplot(b,aes(y=estimate,x=Hummingbird,fill=Total_Culmen)) + geom_violin() + coord_flip() + scale_fill_continuous(low='blue',high='red') + ggtitle("Traitmatching and Bill Length") + theme_bw()
+ggplot(b,aes(y=estimate,x=as.factor(Total_Culmen),group=Hummingbird)) + geom_violin(fill='grey50') + coord_flip()  + ggtitle("Trait-matching and Bill Length") + theme_bw()
 ```
 
 ##Interaction and Bill Length
@@ -355,7 +365,6 @@ Do species with long bill lengths have positive interaction effects?
 ```{r,fig.height=7,fig.width=8,eval=F}
 #species names
 b<-pars_detect[pars_detect$par %in% "beta3",]
-b<-merge(b,jagsIndexBird,by.x="species",by.y="jBird")
 
 #traits
 b<-merge(b,hum.morph,by.x="Hummingbird",by.y="English")
@@ -428,7 +437,7 @@ ggsave("Figures/ResponseCurves.jpeg",height=6.5,width=9)
 Density curves
 
 ```{r}
-#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BUsed_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
+#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
 ```
 
 #Niche Breadth 

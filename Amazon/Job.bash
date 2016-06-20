@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 #clone repo
-cd git@github.com:bw4sz/NetworkPredict.git
+git clone git@github.com:bw4sz/NetworkPredict.git
 
 cd NetworkPredict
 
