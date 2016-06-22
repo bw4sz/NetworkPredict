@@ -99,7 +99,7 @@ InitStage <- function(){
 list(S=initY,dcam=initB,dtrans=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam","dprior_cam","dprior_trans","ynew_transect","ynew_camera")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam","dprior_cam","dprior_trans")
 
 
 #Jags Data
@@ -119,7 +119,7 @@ Dat<-list(
   Traitmatch=jTraitmatch)
 
   #MCMC options
-  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=80000,n.burnin=79000,n.chains=2,DIC=F))
+  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=10000,n.burnin=8000,n.chains=2,DIC=F))
 ```
 
 ```{r,eval=F}
@@ -157,7 +157,7 @@ ggplot(pars_detect[pars_detect$par %in% c("dcam_prior","dtrans_prior","beta1_mu"
 ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=estimate)) + geom_histogram(position='identity') +  facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Parameters")
 ```
 
-```{r,cache=FALSE,fig.width=8,fig.height=6}
+```{r,cache=FALSE,fig.width=11,fig.height=8}
 #Detection figure
 pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all=T)
 ggplot(pars_detect[pars_detect$par %in% c("dtrans","dcam"),],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + scale_x_discrete(labels=c("Camera","Transect")) + facet_wrap(~Hummingbird)
@@ -466,24 +466,6 @@ ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,yma
 ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
 ```
 
-As overall distributions
-
-```{r}
-ggplot(species.mean[species.mean$phi>0.5,]) + geom_boxplot(aes(y=TotalCorolla,x=as.factor(r)),alpha=0.7)
-
-#merge names
-species.traj<-merge(species.traj,jagsIndexBird)
-species.traj<-merge(species.traj,jagsIndexPlants)
-
-#get corolla sizes
-species.traj<-merge(species.traj,fl.morph,by.x="Iplant_Double", by.y="Group.1")
-
-all.mean<-species.traj %>% group_by(jPlant,r) %>% summarize(TotalCorolla=unique(TotalCorolla),phi=mean(y),phi_low=quantile(y,0.05),phi_high=quantile(y,0.95))
-
-ggplot(all.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(r))) + theme_bw() +  ggtitle("Niche Breadth") + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability") + ylim(0,1)
-
-```
-
 #Generate network
 
 ```{r}
@@ -498,7 +480,7 @@ makeN<-function(x){
     aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
   }
   #calculate network statistic
-  nstat<-networklevel(aggm,index=c("connectance","nestedness"))
+  nstat<-networklevel(aggm,index=c("connectance","nestedness","niche overlap"),level="lower")
 }
 
 nstat<-lapply(nsplit,function(x){

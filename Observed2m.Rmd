@@ -221,12 +221,21 @@ for (x in 1:nrow(indatraw)){
 #match the traits
 traitmelt<-melt(traitmatchT)
 colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
+
 #dummy presence variable
 indatraw$Yobs<-1
 
 #prune columsn to make more readable
 indatraw<-indatraw[,c("Hummingbird","Iplant_Double","ID","Time","Month","Year","Transect_R","ele","DateP","Yobs","Day","Survey_Type","Pierce")]
 ```
+
+##Prune daily interactions
+To estimate the daily detectability, there can only be a max of one interaction per day.
+We use mean elevation to average across observations within a transect
+```{r}
+indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day,Transect_R) %>% summarize(Yobs=max(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type))
+```
+
 
 ##Absences - accounting for non-detection
 
@@ -266,8 +275,8 @@ for(t in Time){
     #for each plant along that transect at that date
     pres<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Iplant_Double) %>% .$Iplant_Double
     
-        #Which day in samplign
-        dday<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Day) %>% .$Day
+    #Which day in samplign
+    dday<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Day) %>% .$Day
 
       for (plant in pres){
         #Get mean elevation of that plant record
@@ -279,7 +288,7 @@ for(t in Time){
         if(length(predh)==0){next}
         
         #Make absences from those )(cat not the best)
-        add_absences<-data.frame(Hummingbird=predh,Iplant_Double=plant,Time=t,ID=j,DateP=Date,Month=min(a$Month),Year=unique(a$Year),Transect_R=transect,ele=camelev,Day=dday,Survey_Type=unique(a$Survey_Type),Yobs=0)
+        add_absences<-data.frame(Hummingbird=predh,Iplant_Double=plant,Time=t,ID=j,DateP=Date,Month=min(a$Month),Year=unique(a$Year),Transect_R=transect,ele=camelev,Day=unique(dday),Survey_Type=unique(a$Survey_Type),Yobs=0)
         absences<-append(absences,list(add_absences))
       }
     }
@@ -367,7 +376,6 @@ allF<-full.fl %>% group_by(Month,Year,Transect_R,Date_F) %>% summarize(n=sum(Tot
 
 #Individual flowers for each ID period
 indF<-full.fl %>% group_by(Iplant_Double,Month,Year,Transect_R,Date_F) %>% summarize(n=sum(Total_Flowers,na.rm=T)) %>% summarize(mn=mean(n)) %>% summarize(F=sum(mn)) %>% as.data.frame()
-
 
 for (x in 1:nrow(indat)){
 
