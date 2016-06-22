@@ -99,7 +99,7 @@ InitStage <- function(){
 list(S=initY,dcam=initB,dtrans=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam","dprior_cam","dprior_trans")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam","dprior_cam","dprior_trans","ynew_transect","ynew_camera")
 
 
 #Jags Data
@@ -459,8 +459,29 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(r))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(r))) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability") + ylim(0,1)
+#label factor
+species.mean$r<-as.factor(species.mean$r)
+levels(species.mean$r)<-c("Low","High")
+ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Blue","Red")) + ylim(0,1)
 ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
+```
+
+As overall distributions
+
+```{r}
+ggplot(species.mean[species.mean$phi>0.5,]) + geom_boxplot(aes(y=TotalCorolla,x=as.factor(r)),alpha=0.7)
+
+#merge names
+species.traj<-merge(species.traj,jagsIndexBird)
+species.traj<-merge(species.traj,jagsIndexPlants)
+
+#get corolla sizes
+species.traj<-merge(species.traj,fl.morph,by.x="Iplant_Double", by.y="Group.1")
+
+all.mean<-species.traj %>% group_by(jPlant,r) %>% summarize(TotalCorolla=unique(TotalCorolla),phi=mean(y),phi_low=quantile(y,0.05),phi_high=quantile(y,0.95))
+
+ggplot(all.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(r))) + theme_bw() +  ggtitle("Niche Breadth") + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability") + ylim(0,1)
+
 ```
 
 #Generate network
