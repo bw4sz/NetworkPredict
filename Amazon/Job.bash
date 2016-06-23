@@ -12,7 +12,7 @@ iid=$(ec2metadata --instance-id)
 git checkout -b $iid
 
 #render script
-Rscript -e "rmarkdown::render('Observed2m_model.Rmd')" > run.txt
+Rscript -e "rmarkdown::render('Observed2m_model.Rmd')" &> run.txt
 
 #push results
 git add --all

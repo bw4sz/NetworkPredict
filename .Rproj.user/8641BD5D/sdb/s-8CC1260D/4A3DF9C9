@@ -1,0 +1,18 @@
+{
+    "contents" : "indat<-data.frame(alpha,beta1,beta2,beta3)\n\n#fit regression for each input estimate\nsampletraj<-list()\n\nfor (y in 1:nrow(indat)){\n  v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)\n  \n  sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))\n}\n\nsample_all<-rbind_all(sampletraj)\n\n#Compute CI intervals\npredy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))\n",
+    "created" : 1466635762550.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "483248431",
+    "id" : "4A3DF9C9",
+    "lastKnownWriteTime" : 21955250054430836,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

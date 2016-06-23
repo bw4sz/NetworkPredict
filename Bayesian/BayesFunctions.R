@@ -64,28 +64,25 @@ trajState<-function(alpha,beta,x,observed){
 }
 
 #sample trajectory for a given posterior using quantile or hdi interval
-trajF<-function(alpha,beta1,beta2,beta3,x,resources,type='quantile'){
+trajF<-function(alpha,beta1,beta2,beta3,x,resources){
   indat<-data.frame(alpha,beta1,beta2,beta3)
+  #label rrows
+  indat$id<-1:nrow(indat)
   
-  #fit regression for each input estimate
-  sampletraj<-list()
-  
-  for (y in 1:nrow(indat)){
-    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
+  sampletraj<-indat %>% group_by(id) %>% do(traj(.$alpha,.$beta1,x,resources,.$beta2,.$beta3)) %>% group_by(x) %>% summarize(mean=mean(y),lower=quantile(y,0.05),higher=quantile(y,0.025))
+  return(predy)
+}
+
+#sample trajectory for a given posterior using quantile or hdi interval
+traj<-function(alpha,beta1,beta2,beta3,x,resources){
+
+    #fit regression for each input estimate
+    v=inv.logit(alpha + beta1 * x + beta2 * resources + beta3 * x*resources)
     
-    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
-  }
-  
-  sample_all<-rbind_all(sampletraj)
+    sampletraj<-data.frame(x=as.numeric(x),y=as.numeric(v))
   
   #Compute CI intervals
-  if(type=='quantile'){
-    predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
-  }
-  if(type=='hdi'){
-    predy<-group_by(sample_all,x) %>% summarise(lower=hdi(y)[[1]],upper=hdi(y)[[2]],mean=mean(y,na.rm=T))
-  }
-  return(predy)
+  return(sampletraj)
 }
 
 #sample trajectory for a given posterior using quantile or hdi interval

@@ -346,14 +346,14 @@ flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
 flower.month$Year<-as.factor(flower.month$Year)
 
 #get quantile for each transect
-thresh<-melt(group_by(flower.month,Transect_R) %>% summarize(Threshold=quantile(log(Flowers),0.5)) )
-flower.month<-merge(flower.month,thresh)
-flower.month$High<-log(flower.month$Flowers)>flower.month$value
+thresh<-melt(group_by(flower.month) %>% summarize(Threshold=quantile(Flowers,0.75)))
+#flower.month<-merge(flower.month,thresh)
+#flower.month$High<-log(flower.month$Flowers)>flower.month$value
 
 #fix the levels
 levels(flower.month$Transect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900m - 2100m","2100m - 2300m","2300m - 2500m")
 #plot
-ggplot(flower.month,aes(x=Month.a,log(Flowers),col=High,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~Transect_R,scales="free_y") + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","High"),values=c("black","red")) + labs(col="Resource Availability")
+ggplot(flower.month,aes(x=Month.a,log(Flowers),col=Flowers>thresh$value,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~Transect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","High"),values=c("black","red")) + labs(col="Resource Availability")
 
 #turn min and max elvation into seperate columns for the range
 flower.month$minElev<-as.numeric(str_extract(flower.month$Transect_R,"(\\d+)"))
@@ -403,8 +403,9 @@ ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hum
 
 ```{r}
 #All Resources
-indat$BAll_Flowers<-(indat$Month  %in% c("6","7","8","9","10"))*1
-  #(indat$All_Flowers > quantile(indat$All_Flowers,0.75))*1
+#indat$BAll_Flowers<-(indat$Month  %in% c("6","7","8","9","10"))*1
+
+indat$BAll_Flowers<-(indat$All_Flowers > quantile(indat$All_Flowers,0.5))*1
 
 qthresh<-indat %>% group_by(Hummingbird) %>% summarize(UThresh=quantile(Used_Flowers,0.75))
 

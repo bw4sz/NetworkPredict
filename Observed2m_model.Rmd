@@ -41,7 +41,7 @@ load("Observed.RData")
 ```{r}
 ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
-ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) 
+ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
 m<-glm(data=indat,Yobs~Traitmatch*scaledR,family="binomial")
 summary(m)
@@ -119,7 +119,7 @@ Dat<-list(
   Traitmatch=jTraitmatch)
 
   #MCMC options
-  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=10000,n.burnin=8000,n.chains=2,DIC=F))
+  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99500,n.chains=2,DIC=F))
 ```
 
 ```{r,eval=F}
@@ -184,7 +184,7 @@ castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","beta3_mu
 
 ```{r,fig.width=7,fig.height=6}
 #Trajectories from posterior
-predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat$Traitmatch,resources=indat$scaledR,beta2=castdf$beta2_mu,beta3=castdf$beta3_mu,type='quantile')
+predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat$Traitmatch,resources=indat$scaledR,beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
 ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill="red")  +  theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
 ```
@@ -194,9 +194,9 @@ ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,f
 ```{r,fig.height=6,fig.width=10}
 
 #Trajectories from posterior
-predH<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat[indat$BAll_Flowers==1,"Traitmatch"],resources=indat[indat$ BAll_Flowers==1,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu,type='quantile')
+predH<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat[indat$BAll_Flowers==1,"Traitmatch"],resources=indat[indat$ BAll_Flowers==1,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
-predL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat[indat$BAll_Flowers==0,"Traitmatch"],resources=indat[indat$ BAll_Flowers==0,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu,type='quantile')
+predL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat[indat$BAll_Flowers==0,"Traitmatch"],resources=indat[indat$ BAll_Flowers==0,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
 predhl<-melt(list(High=predH,Low=predL),id.vars=colnames(predH))
 
@@ -231,7 +231,7 @@ for(d in 1:length(species.split)){
   billd<-indat[indat$jBird %in% index,]
 
   #scale resources
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd$scaledR,x=billd$Traitmatch,type='quantile')
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd$scaledR,x=billd$Traitmatch)
   }
 
 names(species.traj)<-names(species.split)
@@ -267,8 +267,8 @@ for(d in 1:length(species.split)){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
 
-  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==0,"scaledR"],x=billd[billd$ BAll_Flowers==0,"Traitmatch"],type='quantile')
-  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==1,"scaledR"],x=billd[billd$ BAll_Flowers==1,"Traitmatch"],type='quantile')
+  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==0,"scaledR"],x=billd[billd$ BAll_Flowers==0,"Traitmatch"])
+  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==1,"scaledR"],x=billd[billd$ BAll_Flowers==1,"Traitmatch"])
   sm<-melt(list(High=sh,Low=sl),id.vars=colnames(sl))
   colnames(sm)[5]<-"Resources"
   species.traj[[d]]<-sm
@@ -309,7 +309,7 @@ for(d in 1:length(species.split)){
   billd<-mindat[mindat$jBird %in% index,]
 
   #Calculate interaction effect
-  species.traj[[d]]<-intF(alpha=dat$alpha,beta1=dat$beta1,x=billd[billd$value > 0 & !is.na(billd$value),'Traitmatch'],resources=billd[billd$value > 0 & !is.na(billd$value),'scaledR'],beta2=dat$beta2,beta3=dat$beta3,type='quantile')
+  species.traj[[d]]<-intF(alpha=dat$alpha,beta1=dat$beta1,x=billd[billd$value > 0 & !is.na(billd$value),'Traitmatch'],resources=billd[billd$value > 0 & !is.na(billd$value),'scaledR'],beta2=dat$beta2,beta3=dat$beta3)
   }
 
 names(species.traj)<-names(species.split)
