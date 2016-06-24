@@ -47,6 +47,9 @@ paste("Run Completed at",Sys.time())
 droppath<-"C:/Users/Ben/Dropbox/"
 fl.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerMorphology.csv",sep=""))
 
+#fuchsia macrostigma has an undue influence on this analysis, being 3x longer than other flowers, its not clear that birds really have to reach down the full corolla lenghth, use effective corolla length.
+fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","TotalCorolla"]<-fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","EffectiveCorolla"]
+
 #First row is empty
 fl.morph<-fl.morph[-1,]
 
@@ -266,7 +269,8 @@ for(t in Time){
     for(transect in trans){
 
     #for each date 
-    datecam<-a %>% filter(Transect_R %in% transect) %>% distinct(DateP) %>% .$DateP
+    datec<-a %>% filter(Transect_R %in% transect)
+    datecam<-unique(datec$DateP)
     }} else{
       datecam<-a %>% distinct(DateP) %>% .$DateP
     }
@@ -275,7 +279,7 @@ for(t in Time){
     #for each plant along that transect at that date
     pres<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Iplant_Double) %>% .$Iplant_Double
     
-    #Which day in samplign
+    #Which day in sampling
     dday<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Day) %>% .$Day
 
       for (plant in pres){
@@ -299,6 +303,7 @@ indatab<-rbind_all(absences)
 
 #merge with original data
 indat<-rbind_all(list(indatraw,indatab))
+
 ```
 
 ```{r}
@@ -346,7 +351,7 @@ flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
 flower.month$Year<-as.factor(flower.month$Year)
 
 #get quantile for each transect
-thresh<-melt(group_by(flower.month) %>% summarize(Threshold=quantile(Flowers,0.75)))
+thresh<-melt(group_by(flower.month) %>% summarize(Threshold=quantile(Flowers,0.5)))
 #flower.month<-merge(flower.month,thresh)
 #flower.month$High<-log(flower.month$Flowers)>flower.month$value
 
@@ -405,7 +410,7 @@ ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hum
 #All Resources
 #indat$BAll_Flowers<-(indat$Month  %in% c("6","7","8","9","10"))*1
 
-indat$BAll_Flowers<-(indat$All_Flowers > quantile(indat$All_Flowers,0.5))*1
+indat$BAll_Flowers<-(indat$All_Flowers > quantile(indat$All_Flowers,0.75))*1
 
 qthresh<-indat %>% group_by(Hummingbird) %>% summarize(UThresh=quantile(Used_Flowers,0.75))
 

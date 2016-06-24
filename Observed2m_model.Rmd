@@ -22,19 +22,24 @@ library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
-set.seed(3)
-
-#source functions
-source("Bayesian/BayesFunctions.R")
+#new model update
+newModel<-T
 ```
 
 ```{r,echo=F,cache=FALSE}
 paste("Run Completed at",Sys.time())
 ```
 
-```{r}
+```{r,eval=T}
 #Load in data from Observed2m_Generate.Rmd
 load("Observed.RData")
+#load("ObservedModel.RData")
+newModel<-T
+```
+
+```{r}
+#source functions
+source("Bayesian/BayesFunctions.R")
 ```
 
 #View Raw Data
@@ -67,10 +72,10 @@ $$ logit(\rho_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i}
 
 $$ \phi_{Camera} \sim U(0,1) $$
 $$ \phi_{Transect} \sim U(0,1) $$
-$$\alpha_i \sim Normal(\alpha_mu,\alpha_\tau)$$
-$$\beta_{1,i} \sim Normal(\mu_{\beta_1,\tau_beta_1})$$
-$$\beta_{2,i} \sim Normal(\mu_{\beta_2,\tau_beta_2})$$
-$$\beta_{3,i} \sim Normal(\mu_{\beta_3,\tau_beta_3})$$
+$$\alpha_i \sim Normal(\alpha_\mu,\alpha_\tau)$$
+$$\beta_{1,i} \sim Normal(\mu_{\beta_1,\tau_{beta_1}})$$
+$$\beta_{2,i} \sim Normal(\mu_{\beta_2,\tau_{beta_2}})$$
+$$\beta_{3,i} \sim Normal(\mu_{\beta_3,\tau_{beta_3}})$$
 
 Group Level Means
 $$ \mu_\alpha \sim Normal(0,0.0001)$$
@@ -119,15 +124,21 @@ Dat<-list(
   Traitmatch=jTraitmatch)
 
   #MCMC options
-  system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99500,n.chains=2,DIC=F))
+  if(newModel){
+    system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99500,n.chains=2,DIC=F))
+  }
 ```
 
 ```{r,eval=F}
 #recompile if needed
-load.module("dic")
-runs<-40000
+runs<-100000
+
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
+
+if(!newModel){
+  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=2))  
+}
+
 ```
 
 ```{r}
@@ -184,9 +195,9 @@ castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","beta3_mu
 
 ```{r,fig.width=7,fig.height=6}
 #Trajectories from posterior
-predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat$Traitmatch,resources=indat$scaledR,beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
+predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR,beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill="red")  +  theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
+ggplot(data=predy,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill="red")  +  theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
 ```
 
 ## At High and Low Resource Availability
@@ -194,9 +205,9 @@ ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,f
 ```{r,fig.height=6,fig.width=10}
 
 #Trajectories from posterior
-predH<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat[indat$BAll_Flowers==1,"Traitmatch"],resources=indat[indat$ BAll_Flowers==1,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
+predH<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat[indat$BAll_Flowers==1,"Traitmatch"],resources=indat[indat$ BAll_Flowers==1,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
-predL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,x=indat[indat$BAll_Flowers==0,"Traitmatch"],resources=indat[indat$ BAll_Flowers==0,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
+predL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat[indat$BAll_Flowers==0,"Traitmatch"],resources=indat[indat$ BAll_Flowers==0,"scaledR"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
 predhl<-melt(list(High=predH,Low=predL),id.vars=colnames(predH))
 
@@ -205,7 +216,7 @@ colnames(predhl)[5]<-"BFlowerL"
 indat$BFlowerL<-factor(as.character(indat$BAll_Flowers))
 levels(indat$BFlowerL)<-c("Low","High")
 
-ggplot(data=predhl,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=BFlowerL),alpha=0.2)  + geom_line(aes(y=mean,col=BFlowerL),size=.8) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mindat,aes(x=Traitmatch,y=value))+ labs(fill="Resource Availability",col="Resource Availability") 
+ggplot(data=predhl,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=BFlowerL),alpha=0.2)  + geom_line(aes(y=mean,col=BFlowerL),size=.8) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mindat,aes(x=Traitmatch,y=value))+ labs(fill="Resource Availability",col="Resource Availability") 
 ggsave("Figures/AllRegression.jpeg",height=5,width=7)
 
 ```
@@ -231,7 +242,7 @@ for(d in 1:length(species.split)){
   billd<-indat[indat$jBird %in% index,]
 
   #scale resources
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd$scaledR,x=billd$Traitmatch)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd$scaledR,trait=billd$Traitmatch)
   }
 
 names(species.traj)<-names(species.split)
@@ -244,7 +255,7 @@ species.traj[,c("Index")]<-colsplit(species.traj$L1,"\\.",c("Index"))
 spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 
 #plot and compare to original data
-ggplot(data=spe,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2,fill='red') + geom_line(aes(y=mean),size=.5) + theme_bw() + ylab("Occurrence Probability")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=mindat,aes(x=Traitmatch,y=value,shape=variable),size=2.5) + labs(shape="Sampling Method")
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2,fill='red') + geom_line(aes(y=mean),size=.5) + theme_bw() + ylab("Occurrence Probability")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=mindat,aes(x=Traitmatch,y=value,shape=variable),size=2.5) + labs(shape="Sampling Method")
 ```
 
 ###Species Predictions: High and Low Availability
@@ -267,8 +278,10 @@ for(d in 1:length(species.split)){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
 
-  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==0,"scaledR"],x=billd[billd$ BAll_Flowers==0,"Traitmatch"])
-  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==1,"scaledR"],x=billd[billd$ BAll_Flowers==1,"Traitmatch"])
+  sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==0,"scaledR"],trait=billd[billd$BAll_Flowers==0,"Traitmatch"])
+  
+  sh<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$BAll_Flowers==1,"scaledR"],trait=billd[billd$BAll_Flowers==1,"Traitmatch"])
+  
   sm<-melt(list(High=sh,Low=sl),id.vars=colnames(sl))
   colnames(sm)[5]<-"Resources"
   species.traj[[d]]<-sm
@@ -284,7 +297,7 @@ species.traj[,c("Index")]<-colsplit(species.traj$L1,"\\.",c("Index"))
 spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 
 #plot and compare to original data
-ggplot(data=spe,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Occurrence Probability")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3) + geom_point(data=mindat,aes(x=Traitmatch,y=value,shape=variable),size=1.5,alpha=.5)
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Occurrence Probability")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3) + geom_point(data=mindat,aes(x=Traitmatch,y=value,shape=variable),size=1.5,alpha=.5)
 ggsave("Figures/SpeciesRegression.jpeg",height=6,width=7)
 
 ```
@@ -325,7 +338,6 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 #plot and compare to original data
 ggplot(data=spe,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Hummingbird),alpha=0.3) + geom_line(aes(y=mean,col=Hummingbird),size=1) + theme_bw() + xlab("Difference between Bill and Corolla Length")  + ylab("Effect of Resources on Trait Difference") + facet_wrap(~Hummingbird,scales="free",ncol=3)
 ggsave("Figures/SpeciesInteraction.jpeg",height=6,width=7)
-
 ```
 
 These plots can be tricky to interpret if one forgets that trait matching as a covariate is a distance. Therefore remember that a positive slope in the plot above indiciates, "As resources increase species use flowers less similiar to their bill lengths". 
