@@ -33,7 +33,7 @@ paste("Run Completed at",Sys.time())
 ```{r,eval=T}
 #Load in data from Observed2m_Generate.Rmd
 load("Observed.RData")
-#load("ObservedModel.RData")
+load("ObservedModel.RData")
 newModel<-T
 ```
 
@@ -44,11 +44,11 @@ source("Bayesian/BayesFunctions.R")
 
 #View Raw Data
 ```{r}
-ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BUsed_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
 ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
-m<-glm(data=indat,Yobs~Traitmatch*scaledR,family="binomial")
+m<-glmer(data=indat,Yobs~Traitmatch*scale(FlowerA)+(1|Hummingbird),family="binomial")
 summary(m)
 ```
 
@@ -125,7 +125,7 @@ Dat<-list(
 
   #MCMC options
   if(newModel){
-    system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99500,n.chains=2,DIC=F))
+    system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=1,n.iter=1000,n.burnin=0,n.chains=1,DIC=F))
   }
 ```
 
@@ -504,7 +504,22 @@ nstat<-lapply(nsplit,function(x){
 names(nstat)<-c("Low","High")
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Resource Availability")
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=3) + scale_fill_discrete("Resource Availability") + theme_bw()
+```
+
+Compared to raw visits
+```{r}
+sindat<-split(indat,indat$scaledR)
+ndat<-lapply(sindat,function(x){
+  web<-acast(x[x$Yobs==1,],Hummingbird~Iplant_Double,value.var = "Yobs", fun= function(x){ length(unique(x))})
+  nstat<-t(networklevel(web,index=c("connectance","nestedness","niche overlap"),level="lower"))
+})
+names(ndat)<-c("Low","High")
+ndat<-melt(ndat)
+
+colnames(ndat)<-c("Var1","Metric","value","L1")
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Resource Availability") + geom_vline(data=ndat,aes(xintercept=value,col=L1),linetype="dashed") + scale_color_discrete(guide='none')
 ```
 
 ```{r}

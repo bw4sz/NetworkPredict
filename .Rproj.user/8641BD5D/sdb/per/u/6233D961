@@ -1,0 +1,18 @@
+{
+    "contents" : "predy<-trajF(alpha=-1.3536,beta1=-0.056545,trait=indat$Traitmatch,resources=scale(indat$FlowerA),beta2=0.221819,beta3=-0.013576)\npredy2<-trajF(alpha=-1.3536,beta1=-0.056545,trait=indat$Traitmatch,resources=scale(indat$FlowerA),beta2=-2.21819,beta3=-0.013576)\n\nggplot(data=predy,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill=\"red\")  +  theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\")  + geom_line(aes(y=mean)) + geom_line(data=predy2,aes(x=trait,y=mean),col=\"blue\")\n\n#Trajectories from posterior\npredH<-trajF(alpha=-1.3536,beta1=-0.056545,trait=indat[indat$BAll_Flowers==1,\"Traitmatch\"],resources=indat[indat$ BAll_Flowers==1,\"scaledR\"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)\n\npredL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat[indat$BAll_Flowers==0,\"Traitmatch\"],resources=indat[indat$ BAll_Flowers==0,\"scaledR\"],beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)\n\npredhl<-melt(list(High=predH,Low=predL),id.vars=colnames(predH))\n\ncolnames(predhl)[5]<-\"BFlowerL\"\n\nindat$BFlowerL<-factor(as.character(indat$BAll_Flowers))\nlevels(indat$BFlowerL)<-c(\"Low\",\"High\")\n\nggplot(data=predhl,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=BFlowerL),alpha=0.2)  + geom_line(aes(y=mean,col=BFlowerL),size=.8) + theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\") + geom_point(data=mindat,aes(x=Traitmatch,y=value))+ labs(fill=\"Resource Availability\",col=\"Resource Availability\") \n",
+    "created" : 1467044723315.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "3989819021",
+    "id" : "6233D961",
+    "lastKnownWriteTime" : 1467044689,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

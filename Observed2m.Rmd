@@ -47,8 +47,14 @@ paste("Run Completed at",Sys.time())
 droppath<-"C:/Users/Ben/Dropbox/"
 fl.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerMorphology.csv",sep=""))
 
+
+#use effective corolla where possible.
+fl.morph$Corolla<-fl.morph$EffectiveCorolla
+
+fl.morph[is.na(fl.morph$Corolla),"Corolla"]<-fl.morph[is.na(fl.morph$Corolla),"TotalCorolla"]
+
 #fuchsia macrostigma has an undue influence on this analysis, being 3x longer than other flowers, its not clear that birds really have to reach down the full corolla lenghth, use effective corolla length.
-fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","TotalCorolla"]<-fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","EffectiveCorolla"]
+fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
 
 #First row is empty
 fl.morph<-fl.morph[-1,]
@@ -117,7 +123,7 @@ dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 ```{r}
 #observed traitmatching
-traitmatchF<-abs(t(sapply(hum.morph$Bill,function(x){x-fl.morph$TotalCorolla})))
+traitmatchF<-abs(t(sapply(hum.morph$Bill,function(x){x-fl.morph$Corolla})))
 rownames(traitmatchF)<-hum.morph$English
 colnames(traitmatchF)<-fl.morph$Group.1
 ```
