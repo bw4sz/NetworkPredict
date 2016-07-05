@@ -19,11 +19,11 @@ library(gridExtra)
 library(boot)
 library(picante)
 library(bipartite)
-
+library(lme4)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 #new model update
-newModel<-T
+newModel<-F
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -32,9 +32,9 @@ paste("Run Completed at",Sys.time())
 
 ```{r,eval=T}
 #Load in data from Observed2m_Generate.Rmd
-load("Observed.RData")
+#load("Observed.RData")
 load("ObservedModel.RData")
-newModel<-T
+newModel<-F
 ```
 
 ```{r}
@@ -125,18 +125,20 @@ Dat<-list(
 
   #MCMC options
   if(newModel){
-    system.time(m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=1,n.iter=1000,n.burnin=0,n.chains=1,DIC=F))
+    system.time(
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=200000,n.burnin=198000,n.chains=2,DIC=F)
+      )
   }
 ```
 
 ```{r,eval=F}
 #recompile if needed
-runs<-100000
+runs<-200000
 
 recompile(m2)
 
 if(!newModel){
-  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=2))  
+  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs-2000,n.thin=2))  
 }
 
 ```
@@ -342,10 +344,19 @@ ggsave("Figures/SpeciesInteraction.jpeg",height=6,width=7)
 
 These plots can be tricky to interpret if one forgets that trait matching as a covariate is a distance. Therefore remember that a positive slope in the plot above indiciates, "As resources increase species use flowers less similiar to their bill lengths". 
 
+
+##Resource Abundance Functions
+Let's take a closer look at distribution of interaction effect posteriors values for each species.
+
+```{r,eval=T}
+post<-pars_detect %>% filter(par %in% "beta2") %>% group_by(Hummingbird) %>% summarize(mean=mean(estimate),median=median(estimate),lower=quantile(probs=0.025,estimate),upper=quantile(probs=0.975,estimate)) %>% melt(id.vars='Hummingbird')
+ggplot(pars_detect[pars_detect$par %in% "beta2",],aes(x=estimate)) + geom_histogram() + facet_wrap(~Hummingbird,scales='free',ncol=4) + geom_vline(data=post,aes(xintercept=value,col=variable))
+```
+
 ##Interaction density functions
 Let's take a closer look at distribution of interaction effect posteriors values for each species.
 
-```{r,eval=F}
+```{r,eval=T}
 post<-pars_detect %>% filter(par %in% "beta3") %>% group_by(Hummingbird) %>% summarize(mean=mean(estimate),median=median(estimate),lower=quantile(probs=0.025,estimate),upper=quantile(probs=0.975,estimate)) %>% melt(id.vars='Hummingbird')
 ggplot(pars_detect[pars_detect$par %in% "beta3",],aes(x=estimate)) + geom_histogram() + facet_wrap(~Hummingbird,scales='free',ncol=4) + geom_vline(data=post,aes(xintercept=value,col=variable))
 ```
@@ -474,8 +485,8 @@ species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="H
 #label factor
 species.mean$r<-as.factor(species.mean$r)
 levels(species.mean$r)<-c("Low","High")
-ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Blue","Red")) + ylim(0,1)
-ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
+ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Blue","Red")) + ylim(0,1)
+ggsave("Figures/NicheBreadth.jpeg",height=8,width=9)
 ```
 
 #Generate network
@@ -505,6 +516,7 @@ names(nstat)<-c("Low","High")
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
 ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=3) + scale_fill_discrete("Resource Availability") + theme_bw()
+ggsave("Figures/NetworkStatistics.jpeg",height=5,width=6,dpi=600)
 ```
 
 Compared to raw visits
