@@ -40,6 +40,7 @@ newModel<-F
 ```{r}
 #source functions
 source("Bayesian/BayesFunctions.R")
+indat<-indat[indat$Survey_Type=="Camera",]
 ```
 
 #View Raw Data
@@ -48,7 +49,7 @@ ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BUsed_Flowers))) + facet_wrap
 
 ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
-m<-glmer(data=indat,Yobs~Traitmatch*scale(FlowerA)+(1|Hummingbird),family="binomial")
+m<-glmer(data=indat,Yobs~Traitmatch*scaledR+(1|Hummingbird),family="binomial")
 summary(m)
 ```
 
