@@ -45,7 +45,7 @@ trajState<-function(alpha,beta,x,observed){
   for (s in 1:nrow(fdat)){
     a<-fdat$alpha[s]
     b<-fdat$beta[s]
-    yp=inv.logit(a + b*x$value)
+    yp=exp(a + b*x$value)
     
     #compute pred value
     state<-data.frame(x,State=rpois(length(yp),yp))
@@ -79,7 +79,7 @@ traj<-function(alpha,beta1,beta2,beta3,trait,resources){
 
     #fit regression for each input estimate
     
-    v=inv.logit(alpha + beta1 * trait + beta2 * resources + beta3 * trait*resources)
+    v=exp(alpha + beta1 * trait + beta2 * resources + beta3 * trait*resources)
     
     sampletraj<-data.frame(trait=trait,y=as.numeric(v))
   
@@ -95,7 +95,7 @@ trajLog<-function(alpha,beta1,beta2,beta3,x,resources,type='quantile'){
   sampletraj<-list()
   
   for (y in 1:nrow(indat)){
-    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
+    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
   }
@@ -120,7 +120,7 @@ trajLogistic<-function(alpha,beta1,beta2,beta3,x,resources){
   sampletraj<-list()
   
   for (y in 1:nrow(indat)){
-    v=inv.logit(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
+    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
   }

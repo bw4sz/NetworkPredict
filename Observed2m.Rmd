@@ -239,11 +239,11 @@ indatraw$Yobs<-1
 indatraw<-indatraw[,c("Hummingbird","Iplant_Double","ID","Time","Month","Year","Transect_R","ele","DateP","Yobs","Day","Survey_Type","Pierce")]
 ```
 
-##Prune daily interactions
+##Summarize daily interactions
 To estimate the daily detectability, there can only be a max of one interaction per day.
 We use mean elevation to average across observations within a transect
 ```{r}
-indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day,Transect_R) %>% summarize(Yobs=max(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type))
+indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day,Transect_R) %>% summarize(Yobs=sum(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type))
 ```
 
 

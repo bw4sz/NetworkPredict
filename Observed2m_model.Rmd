@@ -45,11 +45,11 @@ source("Bayesian/BayesFunctions.R")
 
 #View Raw Data
 ```{r}
-ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_point() + geom_smooth(method = "glm",method.args=list(family="poisson")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
 ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
-m<-glmer(data=indat,Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="binomial")
+m<-glmer(data=indat,Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="poisson")
 summary(m)
 ```
 
@@ -100,7 +100,7 @@ writeLines(readLines("Bayesian/NmixturePoissonRagged2m.R"))
 #Inits
 InitStage <- function(){
   #A blank Y matrix - all present
-  initY<-array(dim=c(Birds,Plants,Times),1)
+  initY<-array(dim=c(Birds,Plants,Times),22)
   initB<-rep(0.5,Birds)
 list(S=initY,dcam=initB,dtrans=initB)}
 
@@ -127,12 +127,12 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=200000,n.burnin=198000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=100000,n.burnin=98000,n.chains=2,DIC=F)
       )
   }
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 runs<-100000
 
@@ -425,7 +425,7 @@ species.traj<-lapply(species.split,function(dat){
   sampletraj<-list()
   
   for (y in 1:nrow(d)){
-    v=inv.logit(d$alpha[y] + d$beta1[y] * billd$Traitmatch + d$beta2[y] * billd$scaledR + d$beta3[y] * billd$Traitmatch*billd$scaledR)
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + d$beta2[y] * billd$scaledR + d$beta3[y] * billd$Traitmatch*billd$scaledR)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),r=as.numeric(billd$scaledR),jBird=billd$jBird,jPlant=billd$jPlant,jTime=billd$jTime)
   }
@@ -482,7 +482,7 @@ species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="H
 #label factor
 species.mean$r<-as.factor(species.mean$r)
 levels(species.mean$r)<-c("Low","High")
-ggplot(species.mean) + geom_ribbon(alpha=0.5,aes(x=Corolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=Corolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Grey","Black")) + ylim(0,1)
+ggplot(species.mean) + geom_ribbon(alpha=0.5,aes(x=Corolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=Corolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Grey","Black"))
 ggsave("Figures/NicheBreadth.jpeg",height=8,width=9)
 ```
 
@@ -495,7 +495,7 @@ makeR<-function(x){
   #input matrix
   aggm<-matrix(nrow=nrow(jagsIndexBird),ncol=nrow(jagsIndexPlants),data=0)
   for (j in 1:nrow(x)){
-    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
+    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rpois(1,lambda=x[j,"phi"])
   }
   
   aggm<-melt(aggm)
@@ -562,7 +562,7 @@ makeN<-function(x){
   #input matrix
   aggm<-matrix(nrow=nrow(jagsIndexBird),ncol=nrow(jagsIndexPlants),data=0)
   for (j in 1:nrow(x)){
-    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
+    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rpois(1,lambda=x[j,"phi"])
   }
   #calculate network statistic
   nstat<-networklevel(aggm,index=c("connectance","nestedness","niche overlap"),level="lower")

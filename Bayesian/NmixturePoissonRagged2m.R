@@ -9,10 +9,10 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    logit(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * resources[i,j,k] * Traitmatch[i,j]
+    log(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * resources[i,j,k] * Traitmatch[i,j]
     
     #True State
-    S[i,j,k] ~ dbern(rho[i,j,k])
+    S[i,j,k] ~ dpois(rho[i,j,k])
     }
     }
     }
@@ -26,8 +26,8 @@ cat("
     #Observation Process for transects
     detect_transect[x]<-dtrans[Bird[x]] * trans_surveys[x]
     
-    Yobs_camera[x] ~ dbern(detect_cam[x] * S[Bird[x],Plant[x],Time[x]])    
-    Yobs_transect[x] ~ dbern(detect_transect[x] * S[Bird[x],Plant[x],Time[x]])    
+    Yobs_camera[x] ~ dbin(detect_cam[x],S[Bird[x],Plant[x],Time[x]])    
+    Yobs_transect[x] ~ dbin(detect_transect[x],S[Bird[x],Plant[x],Time[x]])    
     
     #     #Assess Model Fit - Posterior predictive check
     # 
