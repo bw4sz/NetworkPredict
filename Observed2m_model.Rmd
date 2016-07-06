@@ -23,7 +23,7 @@ library(lme4)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 #new model update
-newModel<-F
+newModel<-T
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -32,15 +32,15 @@ paste("Run Completed at",Sys.time())
 
 ```{r,eval=T}
 #Load in data from Observed2m_Generate.Rmd
-#load("Observed.RData")
-load("ObservedModel.RData")
-newModel<-F
+load("Observed.RData")
+#load("ObservedModel.RData")
+newModel<-T
 ```
 
 ```{r}
 #source functions
 source("Bayesian/BayesFunctions.R")
-#indat<-indat[indat$Survey_Type=="Camera",]
+indat<-indat[indat$Survey_Type=="Camera",]
 ```
 
 #View Raw Data
@@ -49,7 +49,7 @@ ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(
 
 ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
-m<-glmer(data=indat,Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="poisson")
+m<-glmer(data=indat[indat$Hummingbird %in% c("White-whiskered Hermit","Tawny-bellied Hermit"),],Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="poisson")
 summary(m)
 ```
 
@@ -59,20 +59,17 @@ For hummingbird species i feeding on plant species j observed at time k and samp
 
 Observation Model:
 
-$$ YTransect_{i,j,k,d} \sim Bernoulli(\omega_{Transect}) $$
-$$ YCamera_{i,j,k,d} \sim Bernoulli(\omega_{Camera}) $$
+$$ YCamera_{i,j,k,d} \sim Binomial(N_{i,j,k},\omega_{Camera}) $$
 $$ \omega_{Camera} <- \phi_{Camera} * EffortCamera_k $$
-$$ \omega_{Transect} <- \phi_{Transect}* EffortTransect_k $$
 
 Process Model:
 
-$$ p_{i,j,k} \sim Bernoulli(\rho_{i,j,k}) $$
-$$ logit(\rho_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i} *Resources_k + \beta_{3,i} * Traitmatch_{i,j} * Resources_k $$
+$$ N_{i,j,k} \sim Poisson(\lambda_{i,j,k}) $$
+$$ log(\lambda_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i} *Resources_k + \beta_{3,i} * Traitmatch_{i,j} * Resources_k $$
 
 **Priors**
 
 $$ \phi_{Camera} \sim U(0,1) $$
-$$ \phi_{Transect} \sim U(0,1) $$
 $$\alpha_i \sim Normal(\alpha_\mu,\alpha_\tau)$$
 $$\beta_{1,i} \sim Normal(\mu_{\beta_1,\tau_{beta_1}})$$
 $$\beta_{2,i} \sim Normal(\mu_{\beta_2,\tau_{beta_2}})$$
@@ -102,16 +99,15 @@ InitStage <- function(){
   #A blank Y matrix - all present
   initY<-array(dim=c(Birds,Plants,Times),22)
   initB<-rep(0.5,Birds)
-list(S=initY,dcam=initB,dtrans=initB)}
+list(S=initY,dcam=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dtrans","dcam","dprior_cam","dprior_trans")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dcam","dprior_cam")
 
 
 #Jags Data
 Dat<-list(
   Yobs_camera = indat$Camera,
-  Yobs_transect = indat$Transect,
   Birds=max(indat$jBird),
   Bird=indat$jBird,
   Plant=indat$jPlant,
@@ -121,7 +117,6 @@ Dat<-list(
   resources=resourceMatrix,
   Nobs=nrow(indat),
   cam_surveys= (indat$Survey_Type=="Camera")*1,
-  trans_surveys= (indat$Survey_Type=="Transect")*1,
   Traitmatch=jTraitmatch)
 
   #MCMC options
@@ -157,11 +152,11 @@ ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes
 ```
 
 ```{r,fig.height=5}
-ggplot(pars_detect[pars_detect$par %in% c("dcam","dtrans"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
+ggplot(pars_detect[pars_detect$par %in% c("dcam"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("dcam_prior","dtrans_prior","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("dcam_prior","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
 ```
 
 #Posteriors
@@ -174,16 +169,15 @@ ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes
 ```{r,cache=FALSE,fig.width=11,fig.height=8}
 #Detection figure
 pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all=T)
-ggplot(pars_detect[pars_detect$par %in% c("dtrans","dcam"),],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + scale_x_discrete(labels=c("Camera","Transect")) + facet_wrap(~Hummingbird)
+ggplot(pars_detect[pars_detect$par %in% "dcam",],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + facet_wrap(~Hummingbird)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
-ggplot(pars_detect[pars_detect$par %in% c("beta3_mu","beta3_sigma","beta2_mu","beta2_sigma","beta1_mu","beta1_sigma","alpha_mu","alpha_sigma","dprior_cam","dprior_trans"),],aes(x=estimate)) + geom_histogram() + ggtitle("Group Level Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
 #Detection Table
 ```{r}
-detecttable<-group_by(pars_detect,Hummingbird,par) %>% filter(par %in% c('dcam','dtrans')) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+detecttable<-group_by(pars_detect,Hummingbird,par) %>% filter(par %in% c('dcam')) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 detecttable
 ```
 

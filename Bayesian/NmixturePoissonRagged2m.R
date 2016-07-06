@@ -23,12 +23,8 @@ cat("
     #Observation Process for cameras
     detect_cam[x]<-dcam[Bird[x]] * cam_surveys[x]
     
-    #Observation Process for transects
-    detect_transect[x]<-dtrans[Bird[x]] * trans_surveys[x]
-    
     Yobs_camera[x] ~ dbin(detect_cam[x],S[Bird[x],Plant[x],Time[x]])    
-    Yobs_transect[x] ~ dbin(detect_transect[x],S[Bird[x],Plant[x],Time[x]])    
-    
+
     #     #Assess Model Fit - Posterior predictive check
     # 
     #     #Fit discrepancy statistics
@@ -61,22 +57,14 @@ cat("
     for(x in 1:Birds){
     #For Cameras
     dcam[x] ~ dnorm(dprior_cam,tau_dcam)
-    
-    #For Transects
-    dtrans[x] ~ dnorm(dprior_trans,tau_dtrans)
     }
     
     #Detection group prior
     dprior_cam ~ dnorm(0,0.386)
-    dprior_trans ~ dnorm(0,0.386)
-    
+
     #Group effect detect camera
     tau_dcam ~ dunif(0,1000)
     sigma_dcam<-pow(1/tau_dcam,.5)
-    
-    #Group effect detect camera
-    tau_dtrans ~ dunif(0,1000)
-    sigma_dtrans<-pow(1/tau_dtrans,.5)
     
     #Process Model
     #Species level priors
