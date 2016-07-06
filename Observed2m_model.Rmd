@@ -40,16 +40,16 @@ newModel<-F
 ```{r}
 #source functions
 source("Bayesian/BayesFunctions.R")
-indat<-indat[indat$Survey_Type=="Camera",]
+#indat<-indat[indat$Survey_Type=="Camera",]
 ```
 
 #View Raw Data
 ```{r}
-ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BUsed_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
 ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
-m<-glmer(data=indat,Yobs~Traitmatch*scaledR+(1|Hummingbird),family="binomial")
+m<-glmer(data=indat,Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="binomial")
 summary(m)
 ```
 
@@ -132,14 +132,14 @@ Dat<-list(
   }
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
-runs<-200000
+runs<-100000
 
 recompile(m2)
 
 if(!newModel){
-  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs-2000,n.thin=2))  
+  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs-2000,n.thin=4))  
 }
 
 ```
@@ -441,7 +441,9 @@ Mean Estimates for Corolla Sizes
 ```{r}
 species.mean<-species.traj %>% group_by(jBird,jPlant,r) %>% summarize(Traitmatch=unique(x),phi=mean(y))
 
-species.mean<-merge(species.mean,indat[,colnames(indat) %in% c("jBird","jPlant","jTime","Hummingbird","Iplant_Double")])
+tomerge<-indat %>% select(jBird,jPlant,Hummingbird,Iplant_Double) %>% distinct()
+
+species.mean<-merge(species.mean,tomerge)
 
 #get corolla sizes
 species.mean<-merge(species.mean,fl.morph,by.x="Iplant_Double", by.y="Group.1")
@@ -453,15 +455,9 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-p<-ggplot(species.mean,aes(x=TotalCorolla,y=phi,col=as.factor(r))) + geom_line(size=.9) + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + facet_wrap(~Hummingbird,ncol=3,scales="free_y")  + theme_bw() + ylab("Probability of Interaction") + scale_color_manual("Resource Availability",labels=c("Low","High"),values=c("Blue","Red")) + xlab("Flower Corolla Length (mm)") 
+p<-ggplot(species.mean,aes(x=Corolla,y=phi,col=as.factor(r))) + geom_line(size=.9) + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + facet_wrap(~Hummingbird,ncol=3,scales="free_y")  + theme_bw() + ylab("Probability of Interaction") + scale_color_manual("Resource Availability",labels=c("Low","High"),values=c("Blue","Red")) + xlab("Flower Corolla Length (mm)") 
 p
 ggsave("Figures/ResponseCurves.jpeg",height=6.5,width=9)
-```
-
-Density curves
-
-```{r}
-#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
 ```
 
 #Niche Breadth 
@@ -486,8 +482,73 @@ species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="H
 #label factor
 species.mean$r<-as.factor(species.mean$r)
 levels(species.mean$r)<-c("Low","High")
-ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Blue","Red")) + ylim(0,1)
+ggplot(species.mean) + geom_ribbon(alpha=0.5,aes(x=Corolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=Corolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Grey","Black")) + ylim(0,1)
 ggsave("Figures/NicheBreadth.jpeg",height=8,width=9)
+```
+
+##Range plots
+
+```{r}
+nsplit<-split(species.mean,species.mean$r)
+makeR<-function(x){
+  
+  #input matrix
+  aggm<-matrix(nrow=nrow(jagsIndexBird),ncol=nrow(jagsIndexPlants),data=0)
+  for (j in 1:nrow(x)){
+    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
+  }
+  
+  aggm<-melt(aggm)
+  colnames(aggm)<-c("jBird","jPlant","P")
+  tomerge<-species.mean %>% select(jBird,jPlant,Corolla,Hummingbird,Traitmatch) %>% distinct()
+  aggm<-merge(aggm,tomerge)
+  return(aggm)
+}
+
+nstat<-lapply(nsplit,function(x){
+  netstat<-melt(lapply(1:50,function(k) makeR(x)),id.vars=c("jBird","jPlant","Hummingbird","Traitmatch","Corolla","P"))
+  colnames(netstat)[7]<-"Iteration"
+  return(netstat)
+})
+
+names(nstat)<-c("Low","High")
+nstat<-melt(nstat,colnames(nstat[[1]]))
+```
+
+Predicted density
+
+```{r}
+ggplot(nstat[nstat$P==1,],aes(x=Corolla,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Hummingbird,scales='free',nrow=5) + scale_fill_discrete("Resource Availability") + theme_bw()
+```
+
+```{r,fig.width=6,fig.height=10}
+rangestat<-nstat %>% filter(P==1) %>% group_by(Hummingbird,L1) %>% summarize(mean=mean(Corolla),lower=quantile(Corolla,0.05),upper=quantile(Corolla,0.95))
+  
+ggplot(rangestat,aes(x=Hummingbird,ymin=lower,ymax=upper,ymean=mean,col=L1)) + geom_linerange(alpha=0.5,position=position_dodge(width=.75),size=2) + geom_point(aes(y=mean),position=position_dodge(width=.75)) + labs(col="Resource Availability",y="Corolla Length (mm)") + theme_bw() + coord_flip() + theme(legend.position="bottom")
+```
+
+### Predicted Mean
+
+```{r}
+meanstat<-nstat %>% filter(P==1) %>% group_by(Hummingbird,L1,Iteration) %>% summarize(a=mean(Corolla))%>% summarize(mean=mean(a),lower=quantile(a,0.05),upper=quantile(a,0.95))
+  
+ggplot(meanstat,aes(x=Hummingbird,ymin=lower,ymax=upper,ymean=mean,col=L1)) + geom_linerange(alpha=0.5,position=position_dodge(width=.6),size=2) + geom_point(aes(y=mean),position=position_dodge(width=.6)) + labs(col="Resource Availability",y="Corolla Length (mm)") + theme_bw() + coord_flip() + theme(legend.position="bottom")
+```
+
+### Predicted Min
+
+```{r}
+meanstat<-nstat %>% filter(P==1) %>% group_by(Hummingbird,L1,Iteration) %>% summarize(a=min(Corolla))%>% summarize(mean=mean(a),lower=quantile(a,0.05),upper=quantile(a,0.95))
+  
+ggplot(meanstat,aes(x=Hummingbird,ymin=lower,ymax=upper,ymean=mean,col=L1)) + geom_linerange(alpha=0.5,position=position_dodge(width=.75),size=2) + geom_point(aes(y=mean),position=position_dodge(width=.75)) + labs(col="Resource Availability",y="Corolla Length (mm)") + theme_bw() + coord_flip() + theme(legend.position="bottom")
+```
+
+### Predicted Max
+
+```{r}
+meanstat<-nstat %>% filter(P==1) %>% group_by(Hummingbird,L1,Iteration) %>% summarize(a=min(Corolla))%>% summarize(mean=mean(a),lower=quantile(a,0.05),upper=quantile(a,0.95))
+  
+ggplot(meanstat,aes(x=Hummingbird,ymin=lower,ymax=upper,ymean=mean,col=L1)) + geom_linerange(alpha=0.5,position=position_dodge(width=.6),size=2) + geom_point(aes(y=mean),position=position_dodge(width=.6)) + labs(col="Resource Availability",y="Corolla Length (mm)") + theme_bw() + coord_flip() + theme(legend.position="bottom")
 ```
 
 #Generate network
