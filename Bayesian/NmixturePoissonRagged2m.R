@@ -21,9 +21,7 @@ cat("
     for (x in 1:Nobs){
     
     #Observation Process for cameras
-    detect_cam[x]<-dcam[Bird[x]] * cam_surveys[x]
-    
-    Yobs_camera[x] ~ dbin(detect_cam[x],S[Bird[x],Plant[x],Time[x]])    
+    Yobs_camera[x] ~ dbin(dcam[Bird[x]],S[Bird[x],Plant[x],Time[x]])    
 
     #     #Assess Model Fit - Posterior predictive check
     # 
@@ -34,20 +32,6 @@ cat("
     #     
     #     ynew_cam[x]~dbern(detect_cam[Bird[x]] * S[Bird[x],Plant[x],Time[x]])
     #     E.new_cam[x]<-pow((ynew_cam[x]-eval_cam[x]),2)/(eval_cam[x]+0.5)
-    # 
-    #     #Transect
-    #     eval_transect[x]<-detect_transect[Bird[x]]*S[Bird[x],Plant[x],Time[x]]
-    #     E_transect[x]<-pow((Yobs_transect[x]-eval_transect[x]),2)/(eval[x]+0.5)
-    #     
-    #     ynew_transect[x]~dbern(detect_transect[Bird[x]] * S[Bird[x],Plant[x],Time[x]])
-    #     E.new_transect[x]<-pow((ynew_transect[x]-eval_transect[x]),2)/(eval_transect[x]+0.5)
-    #     
-    #     fit_trans<-sum(E_transect[]) #Discrepancy for the observed data
-    #     fitnew_trans<-sum(E.new_transect[])
-    # 
-    #     fit_cam<-sum(E_cam[]) #Discrepancy for the observed data
-    #     fitnew_cam<-sum(E.new_cam[])
-    
     }
     
     #Priors

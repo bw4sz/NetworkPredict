@@ -40,7 +40,6 @@ newModel<-T
 ```{r}
 #source functions
 source("Bayesian/BayesFunctions.R")
-indat<-indat[indat$Survey_Type=="Camera",]
 ```
 
 #View Raw Data
@@ -111,12 +110,11 @@ Dat<-list(
   Birds=max(indat$jBird),
   Bird=indat$jBird,
   Plant=indat$jPlant,
-  Time=indat$jTime,
+  Time=indat$jID,
   Plants=max(indat$jPlant),
-  Times=max(indat$jTime),
+  Times=max(indat$jID),
   resources=resourceMatrix,
   Nobs=nrow(indat),
-  cam_surveys= (indat$Survey_Type=="Camera")*1,
   Traitmatch=jTraitmatch)
 
   #MCMC options
@@ -294,7 +292,7 @@ species.traj[,c("Index")]<-colsplit(species.traj$L1,"\\.",c("Index"))
 spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 
 #plot and compare to original data
-ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Occurrence Probability")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3) + geom_point(data=mindat,aes(x=Traitmatch,y=value,shape=variable),size=1.5,alpha=.5)
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Occurrence Probability")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=mindat,aes(x=Traitmatch,y=value,shape=variable),size=1.5,alpha=.5)
 ggsave("Figures/SpeciesRegression.jpeg",height=6,width=7)
 
 ```
@@ -559,7 +557,7 @@ makeN<-function(x){
     aggm[x[j,"jBird"],x[j,"jPlant"]]<-rpois(1,lambda=x[j,"phi"])
   }
   #calculate network statistic
-  nstat<-networklevel(aggm,index=c("connectance","nestedness","niche overlap"),level="lower")
+  nstat<-networklevel(aggm,index=c("weighted connectance","weighted NODF","niche overlap"),level="lower")
 }
 
 nstat<-lapply(nsplit,function(x){
@@ -580,7 +578,7 @@ Compared to raw visits
 sindat<-split(indat,indat$scaledR)
 ndat<-lapply(sindat,function(x){
   web<-acast(x[x$Yobs==1,],Hummingbird~Iplant_Double,value.var = "Yobs", fun= function(x){ length(unique(x))})
-  nstat<-t(networklevel(web,index=c("connectance","nestedness","niche overlap"),level="lower"))
+  nstat<-t(networklevel(web,index=c("weighted connectance","weighted NODF","niche overlap"),level="lower"))
 })
 names(ndat)<-c("Low","High")
 ndat<-melt(ndat)

@@ -237,13 +237,16 @@ indatraw$Yobs<-1
 
 #prune columsn to make more readable
 indatraw<-indatraw[,c("Hummingbird","Iplant_Double","ID","Time","Month","Year","Transect_R","ele","DateP","Yobs","Day","Survey_Type","Pierce")]
+
+#Just camera data
+indat<-indat[indat$Survey_Type=="Camera",]
 ```
 
 ##Summarize daily interactions
 To estimate the daily detectability, there can only be a max of one interaction per day.
 We use mean elevation to average across observations within a transect
 ```{r}
-indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day,Transect_R) %>% summarize(Yobs=sum(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type))
+indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day) %>% summarize(Yobs=sum(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type))
 ```
 
 
@@ -438,7 +441,9 @@ indat$Camera<-indat$Yobs * f
 f<-(indat$Survey_Type=="Transect")*1
 f[f==0]<-NA
 indat$Transect<-indat$Yobs * f
+```
 
+```{r}
 indat<-droplevels(indat)
 
 #Turn Time and ID into numeric indexes
@@ -447,7 +452,7 @@ indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
 indat$scaledR<-indat$BAll_Flowers
-resourceMatrix<-indat %>% group_by(jBird,jPlant,jTime) %>% summarize(v=mean(scaledR))  %>% acast(jBird ~ jPlant ~ jTime,value.var='v',fill=0)
+resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=unique(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 
 ##melted version for plotting
 mindat<-melt(indat,measure.vars=c("Camera","Transect"))
