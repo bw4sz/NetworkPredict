@@ -1,0 +1,9 @@
+{
+    "path" : "~/NetworkPredict",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

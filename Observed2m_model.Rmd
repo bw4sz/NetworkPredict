@@ -23,7 +23,7 @@ library(lme4)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 #new model update
-newModel<-F
+newModel<-T
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -32,9 +32,9 @@ paste("Run Completed at",Sys.time())
 
 ```{r,eval=T}
 #Load in data from Observed2m_Generate.Rmd
-#load("Observed.RData")
-load("ObservedModel.RData")
-newModel<-F
+load("Observed.RData")
+#load("ObservedModel.RData")
+newModel<-T
 ```
 
 ```{r}
@@ -47,7 +47,10 @@ source("Bayesian/BayesFunctions.R")
 ```{r}
 ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4) + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
-ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat,aes(x=Traitmatch,y=Yobs,col=abs(Month-6))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_point() + geom_smooth(method = "glm",method.args=list(family="binomial"),se=F,aes(group=Month))+ scale_color_continuous(low='blue',high='red')
+
+
+ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4) + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
 m<-glmer(data=indat,Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="binomial")
 summary(m)
@@ -200,7 +203,7 @@ castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","beta3_mu
 #Trajectories from posterior
 predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR,beta2=castdf$beta2_mu,beta3=castdf$beta3_mu)
 
-ggplot(data=predy,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill="red")  +  theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
+ggplot(data=predy,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill="red")  +  theme_bw() + ylab("Probability of Detecting an Interaction") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Camera)) + geom_line(aes(y=mean)) + geom_point(data=indat,aes(x=Traitmatch,y=Transect)) 
 ```
 
 ## At High and Low Resource Availability

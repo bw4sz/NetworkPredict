@@ -27,8 +27,6 @@ library(bipartite)
 library(VennDiagram)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
-
-set.seed(3)
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -237,15 +235,15 @@ indatraw$Yobs<-1
 
 #prune columsn to make more readable
 indatraw<-indatraw[,c("Hummingbird","Iplant_Double","ID","Time","Month","Year","Transect_R","ele","DateP","Yobs","Day","Survey_Type","Pierce")]
+
 ```
 
-##Prune daily interactions
+##Summarize daily interactions
 To estimate the daily detectability, there can only be a max of one interaction per day.
 We use mean elevation to average across observations within a transect
 ```{r}
-indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day,Transect_R) %>% summarize(Yobs=max(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type))
+indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Transect_R,Day) %>% summarize(Yobs=min(Yobs),Time=unique(Time),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type)) %>% ungroup()
 ```
-
 
 ##Absences - accounting for non-detection
 
@@ -263,47 +261,47 @@ Time<-unique(indatraw$Time)
 absences<-list()
 
 for(t in Time){
-  ID<-unlist(unique(indatraw[indatraw$Time ==t,"ID"]))
+  IDlist<-unlist(unique(indatraw[indatraw$Time ==t,"ID"]))
 
-  for (j in ID){
+  for (j in IDlist){
   #Which plants were sampled
   a<-indatraw %>% filter(Time==t,ID==j)
   
   #For each sampled transect
   trans<-unique(a$Transect_R)
   
-  if(!length(trans)==0){
-    for(transect in trans){
-
-    #for each date 
-    datec<-a %>% filter(Transect_R %in% transect)
-    datecam<-unique(datec$DateP)
-    }} else{
-      datecam<-a %>% distinct(DateP) %>% .$DateP
-    }
-    for(Date in datecam){
-      
-    #for each plant along that transect at that date
-    pres<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Iplant_Double) %>% .$Iplant_Double
+      for(transect in trans){
+        #for each date 
+        datec<-a %>% filter(Transect_R %in% transect)
+        datecam<-unique(datec$DateP)
+        
+        for(Date in datecam){
+          
+        #for each plant along that transect at that date
+        pres<-a %>% filter(DateP %in% Date) %>% distinct(Iplant_Double) %>% .$Iplant_Double
+        
+        #Which day in sampling
+        dday<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Day) %>% .$Day
     
-    #Which day in sampling
-    dday<-a %>% filter(Transect_R %in% transect,DateP %in% Date) %>% distinct(Day) %>% .$Day
-
-      for (plant in pres){
-        #Get mean elevation of that plant record
-        camelev<- a %>% filter(Transect_R %in% transect,DateP %in% Date,Iplant_Double %in% plant) %>% .$ele %>% mean()
-        
-        #Which birds are present at that observation
-        predh<-elevH[((elevH$Low < camelev) & (camelev < elevH$High)),"Hummingbird"]
-        
-        if(length(predh)==0){next}
-        
-        #Make absences from those )(cat not the best)
-        add_absences<-data.frame(Hummingbird=predh,Iplant_Double=plant,Time=t,ID=j,DateP=Date,Month=min(a$Month),Year=unique(a$Year),Transect_R=transect,ele=camelev,Day=unique(dday),Survey_Type=unique(a$Survey_Type),Yobs=0)
-        absences<-append(absences,list(add_absences))
+          for (plant in pres){
+            #Get mean elevation of that plant record
+            camelev<- a %>% filter(Transect_R %in% transect,DateP %in% Date,Iplant_Double %in% plant) %>% .$ele %>% mean()
+            
+            #Which birds are present at that observation
+            predh<-elevH[((elevH$Low < camelev) & (camelev < elevH$High)),"Hummingbird"]
+            
+            #remove the ones seen on that plant
+            hum_present<-a %>% filter(Transect_R %in% transect,DateP %in% Date,Iplant_Double %in% plant) %>% .$Hummingbird
+            abbh<-predh[!predh %in% hum_present]
+            if(length(abbh)==0){next}
+            
+            #Make absences from those )(cat not the best)
+            add_absences<-data.frame(Hummingbird=abbh,Iplant_Double=plant,Time=t,ID=j,DateP=Date,Month=min(a$Month),Year=unique(a$Year),Transect_R=transect,ele=camelev,Day=unique(dday),Survey_Type=unique(a$Survey_Type),Yobs=0)
+            absences<-append(absences,list(add_absences))
+          }
+        }
       }
-    }
-  }
+   }
 }
     
 indatab<-rbind_all(absences)
@@ -438,7 +436,9 @@ indat$Camera<-indat$Yobs * f
 f<-(indat$Survey_Type=="Transect")*1
 f[f==0]<-NA
 indat$Transect<-indat$Yobs * f
+```
 
+```{r}
 indat<-droplevels(indat)
 
 #Turn Time and ID into numeric indexes
@@ -447,7 +447,7 @@ indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
 indat$scaledR<-indat$BAll_Flowers
-resourceMatrix<-indat %>% group_by(jBird,jPlant,jTime) %>% summarize(v=mean(scaledR))  %>% acast(jBird ~ jPlant ~ jTime,value.var='v',fill=0)
+resourceMatrix<-indat %>% group_by(jBird,jPlant,jTime) %>% summarize(v=min(scaledR))  %>% acast(jBird ~ jPlant ~ jTime,value.var='v',fill=0)
 
 ##melted version for plotting
 mindat<-melt(indat,measure.vars=c("Camera","Transect"))
