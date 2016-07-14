@@ -101,7 +101,7 @@ InitStage <- function(){
 list(S=initY,dcam=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dcam","dprior_cam")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dcam","dprior_cam","E","fit","fitnew")
 
 
 #Jags Data
@@ -120,7 +120,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=100000,n.burnin=98000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=100,n.burnin=0,n.chains=2,DIC=F)
       )
   }
 ```
@@ -177,6 +177,26 @@ ggplot(pars_detect[pars_detect$par %in% "dcam",],aes(x=par,y=estimate)) + geom_v
 ```{r}
 detecttable<-group_by(pars_detect,Hummingbird,par) %>% filter(par %in% c('dcam')) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 detecttable
+```
+
+##Discrepancy 
+
+The goodness of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
+Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
+
+```{r,fig.height=4,fig.width=8,message=F,warning=F}
+fitstat<-pars_detect[pars_detect$par %in% c("fit","fitnew"),]
+fitstat<-dcast(fitstat,Draw+Chain~par,value.var="estimate")
+
+ymin<-round(min(fitstat$fit))
+ymax<-round(max(fitstat$fit))
+ab<-data.frame(x=0:ymax,y=0:ymax)
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point() + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Posterior predictive check") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
+disc_obs
+
+#Bayesian p-value
+sum(fitstat$fitnew>fitstat$fit)/nrow(fitstat)
+ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 ```
 
 #Predicted Relationship 
@@ -336,6 +356,29 @@ ggsave("Figures/SpeciesInteraction.jpeg",height=6,width=7)
 ```
 
 These plots can be tricky to interpret if one forgets that trait matching as a covariate is a distance. Therefore remember that a positive slope in the plot above indiciates, "As resources increase species use flowers less similiar to their bill lengths". 
+
+## Which species did we predict well?
+```{r}
+smat<-pars_detect %>% filter(par=="E") %>% group_by(species) %>% summarize(fit=sum(estimate)) %>% arrange(desc(fit))
+smat<-merge(smat,jagsIndexBird,by.x="species",by.y="jBird")
+smat
+```
+
+## Discrepancy matrix
+
+```{r}
+dmat<-pars_detect %>% filter(par=="E") %>% group_by(species,plant) %>% summarize(fit=sum(estimate)) %>% arrange(desc(fit))
+dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
+dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
+head(dmat,10)
+
+#get order
+hord<-dmat %>% group_by(Hummingbird) %>% summarize(n=sum(fit)) %>% arrange(desc(n)) %>% .$Hummingbird
+pord<-dmat %>% group_by(Iplant_Double) %>% summarize(n=sum(fit)) %>% arrange(n) %>%  .$Iplant_Double
+dmat$Hummingbird<-factor(dmat$Hummingbird,levels=hord)
+dmat$Iplant_Double<-factor(dmat$Iplant_Double,levels=pord)
+ggplot(dmat,aes(x=Hummingbird,Iplant_Double,fill=fit)) + geom_tile() + theme_bw() + scale_fill_continuous("Discrepancy",low="blue",high="red")
+```
 
 
 ##Resource Abundance Functions

@@ -26,12 +26,12 @@ cat("
     #     #Assess Model Fit - Posterior predictive check
     # 
     #     #Fit discrepancy statistics
-    #     #Camera
-    #     eval_cam[x]<-detect_cam[Bird[x]]*S[Bird[x],Plant[x],Time[x]]
-    #     E_cam[x]<-pow((Yobs_camera[x]-eval_cam[x]),2)/(eval[x]+0.5)
+         #Camera
+         eval_cam[x]<-dcam[Bird[x]]*S[Bird[x],Plant[x],Time[x]]
+         E[x]<-pow((Yobs_camera[x]-eval_cam[x]),2)/(eval_cam[x]+0.5)
     #     
-    #     ynew_cam[x]~dbern(detect_cam[Bird[x]] * S[Bird[x],Plant[x],Time[x]])
-    #     E.new_cam[x]<-pow((ynew_cam[x]-eval_cam[x]),2)/(eval_cam[x]+0.5)
+         ynew_cam[x]~dbin(dcam[Bird[x]], S[Bird[x],Plant[x],Time[x]])
+         E.new[x]<-pow((ynew_cam[x]-eval_cam[x]),2)/(eval_cam[x]+0.5)
     }
     
     #Priors
@@ -89,6 +89,10 @@ cat("
     beta3_mu~dnorm(0,0.386)
     beta3_tau ~ dunif(0,1000)
     beta3_sigma<-pow(1/beta3_tau,0.5)
+
+    #derived posterior check
+    fit<-sum(E[]) #Discrepancy for the observed data
+    fitnew<-sum(E.new[])
     
     }
     ",fill=TRUE)

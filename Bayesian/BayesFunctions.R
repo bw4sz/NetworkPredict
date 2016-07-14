@@ -15,16 +15,15 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   sp_pl<-data.frame(parameter=l,species=as.numeric(str_match(l,pattern="\\[(\\d+)]")[,2]),par=str_extract(l,"\\w+"))
   
   #correct N samples
-  #i<-sp_pl$par %in% "ynew"
-  
+  i<-sp_pl$par %in% "E"
+
   #Species
-  #sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Bird]
+  sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Bird]
   
   #Plant
   #add a NA plant columns
-  #sp_pl$plant<-NA
-  #sp_pl[i,][,"plant"]<-
-   # data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
+  sp_pl$plant<-NA
+  sp_pl[i,][,"plant"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
   
   #merge levels
   pars<-merge(parsO,sp_pl)

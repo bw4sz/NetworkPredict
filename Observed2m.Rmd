@@ -70,6 +70,8 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
+int<-int[1:100,]
+
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
