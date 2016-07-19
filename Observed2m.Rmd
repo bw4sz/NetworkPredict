@@ -70,8 +70,6 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
-int<-int[1:100,]
-
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -456,8 +454,8 @@ indat$jTime<-as.numeric(as.factor(indat$Time))
 indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
-indat$scaledR<-indat$BAll_Flowers
-resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=min(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
+indat$scaledR<-scale(indat$All_Flowers)
+resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 
 ##melted version for plotting
 mindat<-melt(indat,measure.vars=c("Camera","Transect"))

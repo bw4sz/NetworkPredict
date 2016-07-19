@@ -46,10 +46,12 @@ source("Bayesian/BayesFunctions.R")
 ```{r}
 ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_point() + geom_smooth(method = "glm",method.args=list(family="poisson")) + scale_color_manual("Resource Availability",values=c('blue','red'))
 
-ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(scaledR))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
 
-m<-glmer(data=indat[indat$Hummingbird %in% c("White-whiskered Hermit","Tawny-bellied Hermit"),],Yobs~Traitmatch*scale(All_Flowers)+(1|Hummingbird),family="poisson")
+m<-glmer(data=indat[,],Yobs~Traitmatch*scaledR+(1|Hummingbird),family="poisson")
 summary(m)
+indat$pred<-predict(m,type="response")
+ggplot(indat,aes(x=Traitmatch)) + geom_point(aes(y=Yobs)) + geom_line(aes(y=pred,col=as.factor(BAll_Flowers)))
 ```
 
 #Hierarchical Occupancy Model
@@ -120,7 +122,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=100,n.burnin=0,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=100000,n.burnin=98000,n.chains=2,DIC=F)
       )
   }
 ```
@@ -312,7 +314,9 @@ species.traj[,c("Index")]<-colsplit(species.traj$L1,"\\.",c("Index"))
 spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 
 #plot and compare to original data
-ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=mindat,aes(x=Traitmatch,y=value),size=1.5,alpha=.5)
+indat$rplot<-as.factor(indat$scaledR)
+levels(indat$rplot)<-c("Low","High")
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs,col=rplot),size=4,alpha=.75)
 ggsave("Figures/SpeciesRegression.jpeg",height=6,width=7)
 
 ```

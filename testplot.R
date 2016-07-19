@@ -16,3 +16,9 @@ indat$BFlowerL<-factor(as.character(indat$BAll_Flowers))
 levels(indat$BFlowerL)<-c("Low","High")
 
 ggplot(data=predhl,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=BFlowerL),alpha=0.2)  + geom_line(aes(y=mean,col=BFlowerL),size=.8) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mindat,aes(x=Traitmatch,y=value))+ labs(fill="Resource Availability",col="Resource Availability") 
+
+
+m<-glm(data=a,Yobs>0~Traitmatch*scaledR,family="binomial")
+summary(m)
+a$pred<-predict(m,type="response")
+ggplot(a,aes(x=Traitmatch)) + geom_point(aes(y=as.numeric(Yobs>0),col=as.factor(scaledR))) + geom_line(aes(y=pred,col=as.factor(BAll_Flowers)))
