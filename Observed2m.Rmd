@@ -364,15 +364,17 @@ flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
 flower.month$Year<-as.factor(flower.month$Year)
 
 #get quantile for each transect
-thresh<-melt(group_by(flower.month) %>% summarize(Threshold=quantile(Flowers,0.5)))
-#flower.month<-merge(flower.month,thresh)
-#flower.month$High<-log(flower.month$Flowers)>flower.month$value
+#thresh<-melt(group_by(flower.month) %>% summarize(Threshold=quantile(Flowers,0.5)))
+flower.month$R<-cut(flower.month$Flowers,breaks=c(0,quantile(flower.month$Flowers,0.25),quantile(flower.month$Flowers,0.75),max(flower.month$Flowers)),label=c("Low","Medium","High"))
 
 #fix the levels
-levels(flower.month$Transect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900m - 2100m","2100m - 2300m","2300m - 2500m")
+flower.month$PTransect_R<-flower.month$Transect_R
+levels(flower.month$PTransect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900m - 2100m","2100m - 2300m","2300m - 2500m")
 #plot
-ggplot(flower.month,aes(x=Month.a,log(Flowers),col=Flowers>thresh$value,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~Transect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","High"),values=c("black","red")) + labs(col="Resource Availability")
+
+ggplot(flower.month,aes(x=Month.a,log(Flowers),col=R,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~PTransect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","Medium","High"),values=c("black","blue","red")) + labs(col="Resource Availability")
 ggsave("Figures/FlowerMonth.jpeg",dpi=600,height=5,width=9)
+
 #turn min and max elvation into seperate columns for the range
 flower.month$minElev<-as.numeric(str_extract(flower.month$Transect_R,"(\\d+)"))
 flower.month$maxElev<-as.numeric(str_match(flower.month$Transect_R,"(\\d+)_(\\d+)")[,3])
@@ -433,6 +435,12 @@ indat$BUsed_Flowers<-(indat$Used_Flowers > indat$UThresh)*1
 fthresh<-indat %>% group_by(Hummingbird) %>% summarize(FThresh=mean(FlowerA))
 indat<-merge(indat,fthresh)
 indat$BFlowerA<-(indat$FlowerA > indat$FThresh)*1
+
+#merge with flower month, split by elevation, mean per month
+sflowers<-flower.month %>% group_by(Transect_R,Month,Year) %>% summarize(Flowers=mean(Flowers))
+sflowers$R<-cut(sflowers$Flowers,breaks=c(0,quantile(sflowers$Flowers,0.25),quantile(sflowers$Flowers,0.75),max(sflowers$Flowers)),label=c("Low","Medium","High"))
+ 
+indat<-merge(indat,sflowers,c("Transect_R","Month","Year"))
 ```
 
 ```{r}
@@ -454,7 +462,7 @@ indat$jTime<-as.numeric(as.factor(indat$Time))
 indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
-indat$scaledR<-scale(indat$All_Flowers)
+indat$scaledR<-as.numeric(indat$R)
 resourceMatrix<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 
 ##melted version for plotting

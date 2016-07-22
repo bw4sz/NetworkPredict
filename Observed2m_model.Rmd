@@ -44,14 +44,14 @@ source("Bayesian/BayesFunctions.R")
 
 #View Raw Data
 ```{r}
-ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_point() + geom_smooth(method = "glm",method.args=list(family="poisson")) + scale_color_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat,aes(x=Traitmatch,y=Yobs,col=as.factor(R))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_point() + geom_smooth(method = "glm",method.args=list(family="poisson")) + scale_color_manual("Resource Availability",values=c("black",'blue','red'))
 
-ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(BAll_Flowers))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c('blue','red'))
+ggplot(indat[indat$Yobs==1,],aes(x=Traitmatch,fill=as.factor(R))) + facet_wrap(~Hummingbird,ncol=4,scales="free") + geom_density(alpha=.7) + scale_fill_manual("Resource Availability",values=c("black",'blue','red'))
 
-m<-glmer(data=indat[,],Yobs~Traitmatch*scaledR+(1|Hummingbird),family="poisson")
+m<-glmer(data=indat[,],Yobs~Traitmatch*R+(1|Hummingbird),family="poisson")
 summary(m)
 indat$pred<-predict(m,type="response")
-ggplot(indat,aes(x=Traitmatch)) + geom_point(aes(y=Yobs)) + geom_line(aes(y=pred,col=as.factor(BAll_Flowers)))
+ggplot(indat,aes(x=Traitmatch)) + geom_point(aes(y=Yobs)) + geom_line(aes(y=pred,col=as.factor(R)))
 ```
 
 #Hierarchical Occupancy Model
