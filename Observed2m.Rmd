@@ -365,7 +365,7 @@ flower.month$Year<-as.factor(flower.month$Year)
 
 #get quantile for each transect
 #thresh<-melt(group_by(flower.month) %>% summarize(Threshold=quantile(Flowers,0.5)))
-flower.month$R<-cut(flower.month$Flowers,breaks=c(0,quantile(flower.month$Flowers,0.25),quantile(flower.month$Flowers,0.75),max(flower.month$Flowers)),label=c("Low","Medium","High"))
+flower.month$R<-cut(flower.month$Flowers,breaks=c(0,quantile(flower.month$Flowers,0.33),quantile(flower.month$Flowers,0.66),max(flower.month$Flowers)),label=c("Low","Medium","High"))
 
 #fix the levels
 flower.month$PTransect_R<-flower.month$Transect_R
@@ -438,7 +438,7 @@ indat$BFlowerA<-(indat$FlowerA > indat$FThresh)*1
 
 #merge with flower month, split by elevation, mean per month
 sflowers<-flower.month %>% group_by(Transect_R,Month,Year) %>% summarize(Flowers=mean(Flowers))
-sflowers$R<-cut(sflowers$Flowers,breaks=c(0,quantile(sflowers$Flowers,0.25),quantile(sflowers$Flowers,0.75),max(sflowers$Flowers)),label=c("Low","Medium","High"))
+sflowers$R<-cut(sflowers$Flowers,breaks=c(0,quantile(sflowers$Flowers,0.33),quantile(sflowers$Flowers,0.66),max(sflowers$Flowers)),label=c("Low","Medium","High"))
  
 indat<-merge(indat,sflowers,c("Transect_R","Month","Year"))
 ```

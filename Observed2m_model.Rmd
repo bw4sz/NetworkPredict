@@ -23,7 +23,7 @@ library(lme4)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 #new model update
-newModel<-F
+newModel<-T
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -32,9 +32,9 @@ paste("Run Completed at",Sys.time())
 
 ```{r,eval=T}
 #Load in data from Observed2m_Generate.Rmd
-#load("Observed.RData")
-load("ObservedModel.RData")
-newModel<-F
+load("Observed.RData")
+#load("ObservedModel.RData")
+newModel<-T
 ```
 
 ```{r}
@@ -122,14 +122,14 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=100000,n.burnin=99000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=200000,n.burnin=199000,n.chains=2,DIC=F)
       )
   }
 ```
 
 ```{r,eval=F}
 #recompile if needed
-runs<-5000
+runs<-100000
 
 recompile(m2)
 
