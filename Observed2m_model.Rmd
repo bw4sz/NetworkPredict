@@ -95,7 +95,7 @@ writeLines(readLines("Bayesian/NmixturePoissonRagged2m.R"))
 #Inits
 InitStage <- function(){
   #A blank Y matrix - all present
-  initY<-array(dim=c(Birds,Plants,Times),22)
+  initY<-array(dim=c(Birds,Plants,Times),max(indat$Camera)+1)
   initB<-rep(0.5,Birds)
 list(S=initY,detect=initB)}
 
@@ -119,7 +119,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=150000,n.burnin=149000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=10,n.burnin=0,n.chains=2,DIC=F)
       )
   }
 ```

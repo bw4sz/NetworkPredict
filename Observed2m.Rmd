@@ -72,6 +72,7 @@ int[int$DateP %in% '2013-07-25',"Month"]<-7
 
 #one duplicate camera error, perhaps two GPS records.
 int<-int[!(int$ID %in% "FH1108" & int$Date_F %in% '2014-12-01'),]
+int[int$Iplant_Double %in% "Onagaraceae fuschia",]<-"Fuchsia macrostigma"
 
 #Correct known taxonomic disagreements, atleast compared to traits
 int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
@@ -150,13 +151,6 @@ elevP<-read.csv("InputData/PlantElevation.csv",row.names=1)
 colnames(elevP)[5]<-"Elevation"
 elevP$Plant<-1:nrow(elevP)
 elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
-
-#Correct known taxonomic errors
-elevP[elevP$Iplant_Double %in% "Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
-elevP[elevP$Iplant_Double %in% "Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
-elevP[elevP$Iplant_Double %in% "Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-elevP[elevP$Iplant_Double %in% "Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
-elevP[elevP$Iplant_Double %in% "Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
 
 #Merge to observed Data
 #plants
