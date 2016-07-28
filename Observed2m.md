@@ -5,13 +5,13 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-07-28 13:24:19"
+## [1] "Run Completed at 2016-07-28 22:32:05"
 ```
 
 
 ```r
 #reload if needed
-#load("Observed.Rdata")
+#load("Observed.RData")
 ```
 
 #Load in data
@@ -19,9 +19,7 @@ Ben Weinstein - Stony Brook University
 
 ```r
 #read in flower morphology data, comes from Nectar.R
-
 fl.morph<-read.csv("InputData/FlowerMorphology.csv")
-
 
 #use effective corolla where possible.
 fl.morph$Corolla<-fl.morph$EffectiveCorolla
@@ -29,7 +27,7 @@ fl.morph$Corolla<-fl.morph$EffectiveCorolla
 fl.morph[is.na(fl.morph$Corolla),"Corolla"]<-fl.morph[is.na(fl.morph$Corolla),"TotalCorolla"]
 
 #fuchsia macrostigma has an undue influence on this analysis, being 3x longer than other flowers, its not clear that birds really have to reach down the full corolla lenghth, use effective corolla length.
-fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
+#fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
 
 #First row is empty
 fl.morph<-fl.morph[-1,]
@@ -50,6 +48,7 @@ int[int$DateP %in% '2013-07-25',"Month"]<-7
 
 #one duplicate camera error, perhaps two GPS records.
 int<-int[!(int$ID %in% "FH1108" & int$Date_F %in% '2014-12-01'),]
+int[int$Iplant_Double %in% "Onagaraceae fuschia",]<-"Fuchsia macrostigma"
 
 #Correct known taxonomic disagreements, atleast compared to traits
 int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
@@ -145,13 +144,6 @@ colnames(elevP)[5]<-"Elevation"
 elevP$Plant<-1:nrow(elevP)
 elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
 
-#Correct known taxonomic errors
-elevP[elevP$Iplant_Double %in% "Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
-elevP[elevP$Iplant_Double %in% "Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
-elevP[elevP$Iplant_Double %in% "Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-elevP[elevP$Iplant_Double %in% "Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
-elevP[elevP$Iplant_Double %in% "Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
-
 #Merge to observed Data
 #plants
 dathp<-merge(dath,elevP,by="Iplant_Double")
@@ -173,6 +165,7 @@ labs<-paste(seq(1300,2500,200),seq(1500,2700,200),sep="_")
 
 #for the couple points that have 1290 elevation, round up to 300 for convienance
 datph$ele[datph$ele < 1300]<-1301
+datph$ele<-as.numeric(datph$ele)
 datph$Transect_R[is.na(datph$Transect_R)]<-as.character(cut(datph[is.na(datph$Transect_R),]$ele,seq(1300,2700,200),labels=labs))
 
 #Elev for the transects is the midpoint
@@ -379,7 +372,7 @@ levels(flower.month$PTransect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 19
 ggplot(flower.month,aes(x=Month.a,log(Flowers),col=R,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~PTransect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","Medium","High"),values=c("black","blue","red")) + labs(col="Resource Availability")
 ```
 
-<img src="figureObserved/unnamed-chunk-14-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/FlowerMonth.jpeg",dpi=600,height=5,width=9)
@@ -430,7 +423,7 @@ for (x in 1:nrow(indat)){
 ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hummingbird,scales="free")
 ```
 
-<img src="figureObserved/unnamed-chunk-16-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
 
 ##Binary Measures of Resources
 
@@ -542,11 +535,11 @@ gc()
 
 ```
 ##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1719778 91.9    3205452 171.2  3205452 171.2
-## Vcells 4072584 31.1    6946061  53.0  6846319  52.3
+## Ncells 1651513 88.3    2637877 140.9  2637877 140.9
+## Vcells 3967469 30.3    6946061  53.0  5721718  43.7
 ```
 
 ```r
-save.image("Observed.Rdata")
+save.image("Observed.RData")
 ```
 
