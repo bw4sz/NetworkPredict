@@ -100,7 +100,7 @@ InitStage <- function(){
   #A blank Y matrix - all present
   initY<-array(dim=c(Birds,Plants,Times),22)
   initB<-rep(0.5,Birds)
-list(S=initY,dcam=initB)}
+list(S=initY,detect=initB)}
 
 #Parameters to track
 ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dcam","dprior_cam","E","fit","fitnew")
@@ -122,7 +122,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=200000,n.burnin=199000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=2,n.iter=150000,n.burnin=149000,n.chains=2,DIC=F)
       )
   }
 ```
@@ -156,7 +156,7 @@ ggplot(pars_detect[pars_detect$par %in% c("dcam"),],aes(x=Draw,y=estimate,col=as
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("dcam_prior","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("dprior_cam","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
 ```
 
 #Posteriors

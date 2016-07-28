@@ -1,6 +1,6 @@
 #extract and create a dataframe of posteriors
 
-extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
+extract_par<-function(x,data=indat,Bird="Bird",Plant="Plant"){
   #extract desired info from the models
   parsO<-melt(x$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")

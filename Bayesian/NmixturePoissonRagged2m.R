@@ -40,7 +40,8 @@ cat("
     
     for(x in 1:Birds){
     #For Cameras
-    dcam[x] ~ dnorm(dprior_cam,tau_dcam)
+    logit(dcam[x])<-detect[x]
+    detect[x] ~ dnorm(dprior_cam,tau_dcam)
     }
     
     #Detection group prior
