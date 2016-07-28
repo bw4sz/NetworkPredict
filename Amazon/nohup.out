@@ -68,3 +68,33 @@ Switched to a new branch 'i-5c5c3681'
 To git@github.com:bw4sz/Occupy.git
  * [new branch]      i-5c5c3681 -> i-5c5c3681
 Branch i-5c5c3681 set up to track remote branch i-5c5c3681 from origin.
+Warning: Permanently added 'ec2-52-42-205-125.us-west-2.compute.amazonaws.com,52.42.205.125' (ECDSA) to the list of known hosts.
+Switched to branch 'master'
+Your branch is up-to-date with 'origin/master'.
+Warning: Permanently added the RSA host key for IP address '192.30.253.113' to the list of known hosts.
+From github.com:bw4sz/Occupy
+   24fe565..b535004  master     -> origin/master
+Updating 24fe565..b535004
+Fast-forward
+ .Rhistory                             |   838 +-
+ Amazon/Functions.R                    |   111 -
+ Amazon/Job.bash                       |     3 +-
+ Amazon/Startup.bash                   |     2 +-
+ Amazon/hostnames.txt                  |     1 -
+ Amazon/nohup.out                      |    66 +
+ Amazon/out.txt                        |   138 -
+ InputData/FlowerTransectClean.csv     | 39527 +++++++++++++++++---------------
+ InputData/HummingbirdInteractions.csv |  2623 +++
+ Observed.Rmd                          |     9 +-
+ 10 files changed, 23881 insertions(+), 19437 deletions(-)
+ delete mode 100644 Amazon/Functions.R
+ delete mode 100644 Amazon/hostnames.txt
+ delete mode 100644 Amazon/out.txt
+ create mode 100644 InputData/HummingbirdInteractions.csv
+Switched to a new branch 'i-57503a8a'
+[i-57503a8a 8ce4bf4] ec2 run complete
+ 1 file changed, 98 insertions(+)
+ create mode 100644 run.txt
+To git@github.com:bw4sz/Occupy.git
+ * [new branch]      i-57503a8a -> i-57503a8a
+Branch i-57503a8a set up to track remote branch i-57503a8a from origin.

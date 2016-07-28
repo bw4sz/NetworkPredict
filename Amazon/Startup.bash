@@ -13,7 +13,7 @@ dns=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservatio
 sleep 60
 
 # copy over Job.bash to instance
-scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i '/c/Users/Ben/.ssh/rstudio.pem' /c/Users/Ben/Documents/Occupy/Amazon/Job.bash ubuntu@$dns:~
+scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i '/c/Users/Ben/.ssh/rstudio.pem' /c/Users/Ben/Documents/NetworkPredict/Amazon/Job.bash ubuntu@$dns:~
 
 # run job script on instance, don't wait for finish and disconnect terminal
 nohup ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "/c/Users/Ben/.ssh/rstudio.pem" ubuntu@$dns "nohup ./Job.bash" &
