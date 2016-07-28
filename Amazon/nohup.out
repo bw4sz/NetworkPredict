@@ -98,3 +98,19 @@ Switched to a new branch 'i-57503a8a'
 To git@github.com:bw4sz/Occupy.git
  * [new branch]      i-57503a8a -> i-57503a8a
 Branch i-57503a8a set up to track remote branch i-57503a8a from origin.
+Warning: Permanently added 'ec2-52-43-72-6.us-west-2.compute.amazonaws.com,52.43.72.6' (ECDSA) to the list of known hosts.
+Cloning into 'NetworkPredict'...
+Warning: Permanently added the RSA host key for IP address '192.30.253.113' to the list of known hosts.
+Already up-to-date.
+Switched to a new branch 'i-c4573d19'
+[i-c4573d19 cf847ca] ec2 run complete
+ 7 files changed, 721 insertions(+), 621 deletions(-)
+ rewrite Figures/FlowerMonth.jpeg (85%)
+ rewrite Observed.Rdata (77%)
+ rewrite Observed2m.html (84%)
+ rewrite figureObserved/unnamed-chunk-14-1.png (99%)
+ rewrite figureObserved/unnamed-chunk-16-1.png (99%)
+ create mode 100644 run.txt
+Branch i-c4573d19 set up to track remote branch i-c4573d19 from origin.
+To git@github.com:bw4sz/NetworkPredict.git
+ * [new branch]      i-c4573d19 -> i-c4573d19

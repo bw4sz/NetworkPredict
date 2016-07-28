@@ -34,7 +34,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-#load("Observed.Rdata")
+#load("Observed.RData")
 ```
 
 #Load in data
@@ -525,6 +525,6 @@ file.remove(list.files(pattern="*.log"))
 
 ```{r}
 gc()
-save.image("Observed.Rdata")
+save.image("Observed.RData")
 ``` 
 
