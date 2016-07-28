@@ -1,6 +1,6 @@
 #!/bin/bash
 #cd into occupy, if directory doesn't exist, kill the run.
-git git@github.com:bw4sz/NetworkPredict.git --depth 1
+git clone git@github.com:bw4sz/NetworkPredict.git --depth 1
 
 cd NetworkPredict||sudo halt
 
