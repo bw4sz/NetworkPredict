@@ -48,7 +48,7 @@ cat("
     dprior_cam ~ dnorm(0,0.386)
 
     #Group effect detect camera
-    tau_dcam ~ dunif(0,1000)
+    tau_dcam ~  dt(0,1,1)I(0,)
     sigma_dcam<-pow(1/tau_dcam,.5)
     
     #Process Model

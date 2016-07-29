@@ -119,7 +119,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=150000,n.burnin=150000-2000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=200000,n.burnin=200000-2000,n.chains=2,DIC=F)
       )
   }
 ```
