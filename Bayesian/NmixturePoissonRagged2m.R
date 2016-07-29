@@ -73,22 +73,22 @@ cat("
     
     #Intercept 
     alpha_mu ~ dnorm(0,0.386)
-    alpha_tau ~ dunif(0,1000)
+    alpha_tau ~ dt(0,1,1)I(0,)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #Trait
     beta1_mu~dnorm(0,0.386)
-    beta1_tau ~ dunif(0,1000)
+    beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
     
     #Resources
     beta2_mu~dnorm(0,0.386)
-    beta2_tau ~ dunif(0,1000)
+    beta2_tau ~ dt(0,1,1)I(0,)
     beta2_sigma<-pow(1/beta2_tau,0.5)
     
     #Interaction
     beta3_mu~dnorm(0,0.386)
-    beta3_tau ~ dunif(0,1000)
+    beta3_tau ~ dt(0,1,1)I(0,)
     beta3_sigma<-pow(1/beta3_tau,0.5)
 
     #derived posterior check
