@@ -51,7 +51,7 @@ indat$pred<-predict(m,type="response")
 ggplot(indat,aes(x=Traitmatch)) + geom_point(aes(y=Yobs)) + geom_line(aes(y=pred,col=as.factor(R)))
 ```
 
-#Hierarchical Occupancy Model
+#Hierarchical Model
 
 For hummingbird species i feeding on plant species j observed at time k and sampling event observed by transect (YTransect) or camera (YCamera)
 
@@ -67,23 +67,23 @@ $$ log(\lambda_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i
 
 **Priors**
 
-$$ \phi_{Camera} \sim U(0,1) $$
+$$ \phi \sim U(0,1) $$
 $$\alpha_i \sim Normal(\alpha_\mu,\alpha_\tau)$$
 $$\beta_{1,i} \sim Normal(\mu_{\beta_1,\tau_{beta_1}})$$
 $$\beta_{2,i} \sim Normal(\mu_{\beta_2,\tau_{beta_2}})$$
 $$\beta_{3,i} \sim Normal(\mu_{\beta_3,\tau_{beta_3}})$$
 
-Group Level Means
-$$ \mu_\alpha \sim Normal(0,0.0001)$$
-$$\mu_{\beta_1} \sim Normal(0,0.0001)$$
-$$\mu_{\beta_2} \sim Normal(0,0.0001)$$
-$$\mu_{\beta_3} \sim Normal(0,0.0001)$$
+Group Level Logit Transformed Means
+$$ \mu_\alpha \sim Normal(0,1.67)$$
+$$\mu_{\beta_1} \sim Normal(0,1.67)$$
+$$\mu_{\beta_2} \sim Normal(0,1.67)$$
+$$\mu_{\beta_3} \sim Normal(0,1.67)$$
 
 Group Level Variance
-$$\tau_{\alpha} \sim Uniform(0,1000)$$
-$$\tau_{\beta_1} \sim Uniform(0,1000)$$
-$$\tau_{\beta_2} \sim Uniform(0,1000)$$
-$$\tau_{\beta_3} \sim Uniform(0,1000)$$
+$$\tau_{\alpha} \sim Half_cauchy(0,1,1)$$
+$$\tau_{\beta_1} \sim Half_cauchy(0,1,1)$$
+$$\tau_{\beta_2} \sim Half_cauchy(0,1,1)$$
+$$\tau_{\beta_3} \sim Half_cauchy(0,1,1)$$
 
 ```{r,eval=T,strip.white=T}
 #Source model
@@ -100,7 +100,7 @@ InitStage <- function(){
 list(S=initY,detect=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","dcam","dprior_cam","E","fit","fitnew")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","detect","E","fit","fitnew")
 
 
 #Jags Data
@@ -119,7 +119,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=200000,n.burnin=200000-2000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=220000,n.burnin=220000-2000,n.chains=2,DIC=F)
       )
   }
 ```
@@ -149,7 +149,7 @@ ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes
 ```
 
 ```{r,fig.height=5}
-ggplot(pars_detect[pars_detect$par %in% c("dcam"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
+ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -166,7 +166,7 @@ ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes
 ```{r,cache=FALSE,fig.width=11,fig.height=8}
 #Detection figure
 pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all=T)
-ggplot(pars_detect[pars_detect$par %in% "dcam",],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + facet_wrap(~Hummingbird)
+ggplot(pars_detect[pars_detect$par %in% "detect",],aes(x=par,y=estimate)) + geom_violin(fill='black') + theme_bw() + ggtitle("Detection Probability") + facet_wrap(~Hummingbird)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
@@ -174,7 +174,7 @@ ggplot(pars_detect[pars_detect$par %in% "dcam",],aes(x=par,y=estimate)) + geom_v
 
 #Detection Table
 ```{r}
-detecttable<-group_by(pars_detect,Hummingbird,par) %>% filter(par %in% c('dcam')) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+detecttable<-group_by(pars_detect,Hummingbird,par) %>% filter(par %in% c('detect')) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 detecttable
 ```
 
@@ -366,7 +366,6 @@ These plots can be tricky to interpret if one forgets that trait matching as a c
 ```{r}
 smat<-pars_detect %>% filter(par=="E") %>% group_by(species) %>% summarize(fit=sum(estimate)) %>% arrange(desc(fit))
 smat<-merge(smat,jagsIndexBird,by.x="species",by.y="jBird")
-smat
 ```
 
 ## Discrepancy matrix
@@ -382,7 +381,7 @@ hord<-dmat %>% group_by(Hummingbird) %>% summarize(n=sum(fit)) %>% arrange(desc(
 pord<-dmat %>% group_by(Iplant_Double) %>% summarize(n=sum(fit)) %>% arrange(n) %>%  .$Iplant_Double
 dmat$Hummingbird<-factor(dmat$Hummingbird,levels=hord)
 dmat$Iplant_Double<-factor(dmat$Iplant_Double,levels=pord)
-ggplot(dmat,aes(x=Hummingbird,Iplant_Double,fill=fit)) + geom_tile() + theme_bw() + scale_fill_continuous("Discrepancy",low="blue",high="red")
+ggplot(dmat,aes(x=Hummingbird,Iplant_Double,fill=fit)) + geom_tile() + theme_bw() + scale_fill_continuous("Discrepancy",low="blue",high="red") + theme(axis.text.x=element_text(angle = -90))
 ```
 
 
@@ -523,7 +522,7 @@ species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="H
 species.mean$r<-as.factor(species.mean$r)
 levels(species.mean$r)<-c("Low","Medium","High")
 ggplot(species.mean) + geom_ribbon(alpha=0.7,aes(x=Corolla,ymin=phi_low,ymax=phi_high,fill=r)) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=Corolla,y=phi,fill=r)) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_manual("Resource Availability",values=c("Grey70","Grey20","Black"))
-ggsave("Figures/NicheBreadth.jpeg",height=8,width=9)
+ggsave("Figures/NicheBreadth.jpeg",height=7,width=11)
 ```
 
 ##Range plots
