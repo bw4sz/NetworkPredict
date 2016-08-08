@@ -1358,3 +1358,25 @@ output file: Observed2m.knit.md
 Output created: Observed2m.html
 There were 40 warnings (use warnings() to see them)
 Connection reset by 52.35.123.151
+Warning: Permanently added 'ec2-52-42-226-136.us-west-2.compute.amazonaws.com,52.42.226.136' (ECDSA) to the list of known hosts.
+Cloning into 'NetworkPredict'...
+Warning: Permanently added the RSA host key for IP address '192.30.253.113' to the list of known hosts.
+Already up-to-date.
+Switched to a new branch 'i-dd3c9b49'
+
+
+processing file: Observed2m.Rmd
+  |                                                                         |                                                                 |   0%  |                                                                         |..                                                               |   2%
+  ordinary text without R code
+
+  |                                                                         |...                                                              |   5%
+label: unnamed-chunk-1 (with options) 
+List of 4
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ echo   : logi FALSE
+ $ cache  : logi FALSE
+
+Loading required package: rjags
+Loading required package: coda
+Connection reset by 52.42.226.136

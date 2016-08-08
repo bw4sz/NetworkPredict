@@ -57,7 +57,7 @@ For hummingbird species i feeding on plant species j observed at time k and samp
 
 Observation Model:
 
-$$ YCamera_{i,j,k,d} \sim Binomial(N_{i,j,k},\omega_{Camera}) $$
+$$ YCamera_{i,j,k,d} \sim Binomial(N_{i,j,k},\omega_{species}) $$
 $$ \omega_{Camera} <- \phi_{Camera} * EffortCamera_k $$
 
 Process Model:
@@ -119,7 +119,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=220000,n.burnin=220000-2000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=220000,n.burnin=300000-2000,n.chains=2,DIC=F)
       )
   }
 ```
@@ -148,8 +148,8 @@ pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
-```{r,fig.height=10}
-ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_wrap(~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
+```{r,fig.height=12}
+ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_wrap(~species,scale="free",ncol=3) + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
 ```{r,fig.height=5,fig.width=11}
