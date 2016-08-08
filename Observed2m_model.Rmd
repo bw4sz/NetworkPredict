@@ -97,7 +97,7 @@ InitStage <- function(){
   #A blank Y matrix - all present
   initY<-array(dim=c(Birds,Plants,Times),22)
   initB<-rep(0.5,Birds)
-list(S=initY,detect=initB)}
+list(S=initY,dcam=initB)}
 
 #Parameters to track
 ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","detect","E","fit","fitnew")
@@ -119,7 +119,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=220000,n.burnin=300000-2000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=300000,n.burnin=300000-2000,n.chains=2,DIC=F)
       )
   }
 ```
