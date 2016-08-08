@@ -516,6 +516,18 @@ file.remove(list.files(pattern="*.log"))
 ```
 
 
+#Trait distributions
+
+```{r}
+fl<-merge(full.fl,fl.morph,by.x="Iplant_Double",by.y="Group.1")
+fll<-merge(fl,flower.month,by.y=c("Date_F","Transect_R"),by.x=c("Date_F","Transect_R"))
+
+#invert level order
+fll$R<-factor(fll$R,levels=rev(levels(fll$R)))
+ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.8) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("red","blue","grey50")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)")
+ggsave("Figures/TraitDensity.jpeg",height=3,width=6,dpi=500)
+```
+
 ```{r}
 gc()
 save.image("Observed.RData")

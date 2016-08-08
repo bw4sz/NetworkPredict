@@ -617,7 +617,7 @@ names(nstat)<-c("Low","Medium","High")
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
 ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=3) + scale_fill_discrete("Resource Availability") + theme_bw()
-ggsave("Figures/NetworkStatistics.jpeg",height=5,width=6,dpi=600)
+ggsave("Figures/NetworkStatistics.jpeg",height=9,width=6,dpi=600)
 ```
 
 Compared to raw visits
