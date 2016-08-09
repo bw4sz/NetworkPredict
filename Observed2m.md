@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-08 18:48:02"
+## [1] "Run Completed at 2016-08-08 21:17:24"
 ```
 
 
@@ -536,7 +536,7 @@ gc()
 ```
 ##           used (Mb) gc trigger  (Mb) max used  (Mb)
 ## Ncells 1651513 88.3    2637877 140.9  2637877 140.9
-## Vcells 3967471 30.3    6946061  53.0  5721718  43.7
+## Vcells 3967469 30.3    6946061  53.0  5721718  43.7
 ```
 
 ```r
