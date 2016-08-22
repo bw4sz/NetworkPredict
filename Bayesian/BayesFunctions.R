@@ -69,7 +69,7 @@ trajF<-function(alpha,beta1,beta2,beta3,trait,resources){
   #label rows
   g$id<-1:nrow(g)
   
-  sampletraj<-g %>% group_by(id) %>% do(traj(.$alpha,.$beta1,trait=trait,resources,.$beta2,.$beta3)) %>% group_by(trait) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
+  sampletraj<-g %>% group_by(id) %>% do(traj(.$alpha,.$beta1,.$beta2,.$beta3,trait=trait,resources=resources)) %>% group_by(trait,resources) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
   return(sampletraj)
 }
 
@@ -80,7 +80,7 @@ traj<-function(alpha,beta1,beta2,beta3,trait,resources){
     
     v=exp(alpha + beta1 * trait + beta2 * resources + beta3 * trait*resources)
     
-    sampletraj<-data.frame(trait=trait,y=as.numeric(v))
+    sampletraj<-data.frame(trait=trait,resources=resources,y=as.numeric(v))
   
   #Compute CI intervals
   return(sampletraj)

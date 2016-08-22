@@ -202,6 +202,25 @@ datph$Survey_Type[!datph$Survey_Type %in% "Transect"]<-"Camera"
 
 datph<-datph[datph$Survey_Type=="Camera",]
 
+#time filter
+
+#sort by timestamp
+datph<-datph[order(datph$timestamp),]
+
+dotime<-function(d){
+  d$Timediff<-NA
+  if(nrow(d)>1){
+  for (x in 2:nrow(d)){
+  d$Timediff[x]<-difftime(d$timestamp[x],d$timestamp[x-1],units="mins")  
+  }
+  }
+  return(d)
+}
+
+datph<-datph %>% group_by(ID,Hummingbird) %>% do(dotime(.))
+
+#eliminate interaction by the same species within five minutes
+datph<-datph[!1:nrow(datph) %in% which(datph$Timediff<5),]
 #Day level
 #add day ID
 sdat<-split(datph,list(datph$ID),drop = T)

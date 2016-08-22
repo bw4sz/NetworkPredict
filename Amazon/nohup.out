@@ -1790,3 +1790,218 @@ output file: Observed2m.knit.md
 
 Output created: Observed2m.html
 There were 40 warnings (use warnings() to see them)
+Warning: Permanently added 'ec2-52-33-70-137.us-west-2.compute.amazonaws.com,52.33.70.137' (ECDSA) to the list of known hosts.
+Cloning into 'NetworkPredict'...
+Already up-to-date.
+Switched to a new branch 'i-2d5bfdb9'
+
+
+processing file: Observed2m.Rmd
+  |                                                                         |                                                                 |   0%  |                                                                         |.                                                                |   2%
+  ordinary text without R code
+
+  |                                                                         |...                                                              |   4%
+label: unnamed-chunk-1 (with options) 
+List of 4
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ echo   : logi FALSE
+ $ cache  : logi FALSE
+
+Loading required package: rjags
+Loading required package: coda
+Linked to JAGS 4.2.0
+Loaded modules: basemod,bugs
+
+Attaching package: 'R2jags'
+
+The following object is masked from 'package:coda':
+
+    traceplot
+
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: 'gridExtra'
+
+The following object is masked from 'package:dplyr':
+
+    combine
+
+Loading required package: vegan
+Loading required package: permute
+Loading required package: lattice
+
+Attaching package: 'lattice'
+
+The following object is masked from 'package:boot':
+
+    melanoma
+
+This is vegan 2.4-0
+Loading required package: sna
+sna: Tools for Social Network Analysis
+Version 2.3-2 created on 2014-01-13.
+copyright (c) 2005, Carter T. Butts, University of California-Irvine
+ For citation information, type citation("sna").
+ Type help(package="sna") to get started.
+
+ This is bipartite 2.06.1
+ For latest changes see versionlog in  ?"bipartite-package".
+ For citation see: citation("bipartite").
+ Have a nice time plotting and analysing two-mode networks.
+
+
+Attaching package: 'bipartite'
+
+The following object is masked from 'package:vegan':
+
+    nullmodel
+
+Loading required package: grid
+Loading required package: futile.logger
+  |                                                                         |....                                                             |   7%
+  ordinary text without R code
+
+  |                                                                         |......                                                           |   9%
+label: unnamed-chunk-2 (with options) 
+List of 2
+ $ echo : symbol F
+ $ cache: logi FALSE
+
+  |                                                                         |.......                                                          |  11%
+  ordinary text without R code
+
+  |                                                                         |.........                                                        |  13%
+label: unnamed-chunk-3
+  |                                                                         |..........                                                       |  16%
+  ordinary text without R code
+
+  |                                                                         |............                                                     |  18%
+label: unnamed-chunk-4
+  |                                                                         |.............                                                    |  20%
+  ordinary text without R code
+
+  |                                                                         |..............                                                   |  22%
+label: unnamed-chunk-5
+  |                                                                         |................                                                 |  24%
+  ordinary text without R code
+
+  |                                                                         |.................                                                |  27%
+label: unnamed-chunk-6
+  |                                                                         |...................                                              |  29%
+  ordinary text without R code
+
+  |                                                                         |....................                                             |  31%
+label: unnamed-chunk-7
+  |                                                                         |......................                                           |  33%
+  ordinary text without R code
+
+  |                                                                         |.......................                                          |  36%
+label: unnamed-chunk-8
+  |                                                                         |.........................                                        |  38%
+  ordinary text without R code
+
+  |                                                                         |..........................                                       |  40%
+label: unnamed-chunk-9
+  |                                                                         |...........................                                      |  42%
+  ordinary text without R code
+
+  |                                                                         |.............................                                    |  44%
+label: unnamed-chunk-10
+  |                                                                         |..............................                                   |  47%
+  ordinary text without R code
+
+  |                                                                         |................................                                 |  49%
+label: unnamed-chunk-11
+  |                                                                         |.................................                                |  51%
+  ordinary text without R code
+
+  |                                                                         |...................................                              |  53%
+label: unnamed-chunk-12
+  |                                                                         |....................................                             |  56%
+  ordinary text without R code
+
+  |                                                                         |......................................                           |  58%
+label: unnamed-chunk-13
+  |                                                                         |.......................................                          |  60%
+  ordinary text without R code
+
+  |                                                                         |........................................                         |  62%
+label: unnamed-chunk-14 (with options) 
+List of 2
+ $ fig.height: num 5
+ $ fig.width : num 9
+
+  |                                                                         |..........................................                       |  64%
+  ordinary text without R code
+
+  |                                                                         |...........................................                      |  67%
+label: unnamed-chunk-15
+  |                                                                         |.............................................                    |  69%
+  ordinary text without R code
+
+  |                                                                         |..............................................                   |  71%
+label: unnamed-chunk-16
+  |                                                                         |................................................                 |  73%
+  ordinary text without R code
+
+  |                                                                         |.................................................                |  76%
+label: unnamed-chunk-17
+  |                                                                         |...................................................              |  78%
+  ordinary text without R code
+
+  |                                                                         |....................................................             |  80%
+label: unnamed-chunk-18
+  |                                                                         |.....................................................            |  82%
+  ordinary text without R code
+
+  |                                                                         |.......................................................          |  84%
+label: unnamed-chunk-19
+  |                                                                         |........................................................         |  87%
+  ordinary text without R code
+
+  |                                                                         |..........................................................       |  89%
+label: unnamed-chunk-20 (with options) 
+List of 3
+ $ fig.height: num 4
+ $ width     : num 6
+ $ eval      : symbol F
+
+  |                                                                         |...........................................................      |  91%
+  ordinary text without R code
+
+  |                                                                         |.............................................................    |  93%
+label: unnamed-chunk-21
+  |                                                                         |..............................................................   |  96%
+  ordinary text without R code
+
+  |                                                                         |................................................................ |  98%
+label: unnamed-chunk-22
+  |                                                                         |.................................................................| 100%
+  ordinary text without R code
+
+
+output file: Observed2m.knit.md
+
+/usr/bin/pandoc +RTS -K512m -RTS Observed2m.utf8.md --to html --from markdown+autolink_bare_uris+ascii_identifiers+tex_math_single_backslash --output Observed2m.html --smart --email-obfuscation none --self-contained --standalone --section-divs --table-of-contents --toc-depth 3 --template /home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/default.html --number-sections --variable 'theme:spacelab' --include-in-header /tmp/RtmpnzWYvE/rmarkdown-str5ab5ea97ae8.html --mathjax --variable 'mathjax-url:https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --no-highlight --variable highlightjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/highlight --variable navigationjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/navigation-1.0 
+
+Output created: Observed2m.html
+There were 40 warnings (use warnings() to see them)
+[i-2d5bfdb9 f9c08ff] ec2 run complete
+ 7 files changed, 41 insertions(+), 11 deletions(-)
+ rewrite Figures/FlowerMonth.jpeg (85%)
+ rewrite Figures/NetworkStatistics.jpeg (65%)
+ create mode 100644 Figures/TraitDensity.jpeg
+To git@github.com:bw4sz/NetworkPredict.git
+ * [new branch]      i-2d5bfdb9 -> i-2d5bfdb9
+Branch i-2d5bfdb9 set up to track remote branch i-2d5bfdb9 from origin.

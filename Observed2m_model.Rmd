@@ -57,8 +57,7 @@ For hummingbird species i feeding on plant species j observed at time k and samp
 
 Observation Model:
 
-$$ YCamera_{i,j,k,d} \sim Binomial(N_{i,j,k},\omega_{species}) $$
-$$ \omega_{Camera} <- \phi_{Camera} * EffortCamera_k $$
+$$ Yobs_{i,j,k,d} \sim Binomial(N_{i,j,k},\phi) $$
 
 Process Model:
 
@@ -67,7 +66,7 @@ $$ log(\lambda_{i,j,k}) = \alpha_i + \beta_{1,i} * Traitmatch_{i,j} + \beta_{2,i
 
 **Priors**
 
-$$ \phi \sim U(0,1) $$
+$$ \phi \sim Normal(0,0.386) $$
 $$\alpha_i \sim Normal(\alpha_\mu,\alpha_\tau)$$
 $$\beta_{1,i} \sim Normal(\mu_{\beta_1,\tau_{beta_1}})$$
 $$\beta_{2,i} \sim Normal(\mu_{\beta_2,\tau_{beta_2}})$$
@@ -119,7 +118,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=4,n.iter=300000,n.burnin=300000-2000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=8,n.iter=400000,n.burnin=400000-4000,n.chains=2,DIC=F)
       )
   }
 ```
@@ -153,7 +152,7 @@ ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=Draw,y=estimate,col=
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("dprior_cam","beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta1_sigma","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","alpha_mu","alpha_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Group Level Parameters") + facet_wrap(~par,scales="free")
 ```
 
 #Posteriors
@@ -301,7 +300,6 @@ for(d in 1:length(species.split)){
   sl<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,beta3=x$beta3,resources=billd[billd$R=="Low","scaledR"],trait=billd[billd$R=="Low","Traitmatch"])
   
   sm<-melt(list(High=sh,Medium=sm,Low=sl),id.vars=colnames(sl))
-  colnames(sm)[5]<-"Resources"
   species.traj[[d]]<-sm
   }
 
@@ -317,8 +315,10 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 #plot and compare to original data
 indat$rplot<-as.factor(indat$scaledR)
 levels(indat$rplot)<-c("Low","Medium","High")
-ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Resources),alpha=0.2) + geom_line(aes(y=mean,col=Resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs,col=rplot),size=4,alpha=.75)
-ggsave("Figures/SpeciesRegression.jpeg",height=6,width=7)
+spe$resources<-as.factor(spe$resources)
+levels(spe$resources)<-c("Low","Medium","High")
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=resources),alpha=0.5) + geom_line(aes(y=mean,group=resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=1.2) + scale_fill_manual("Resource Availability",values=c("Grey70","Grey40","Black"))
+ggsave("Figures/SpeciesRegression.jpeg",height=7,width=11)
 
 ```
 
@@ -604,7 +604,7 @@ makeN<-function(x){
     aggm[x[j,"jBird"],x[j,"jPlant"]]<-rpois(1,lambda=x[j,"phi"])
   }
   #calculate network statistic
-  nstat<-networklevel(aggm,index=c("weighted connectance","weighted NODF","niche overlap"),level="lower")
+  nstat<-networklevel(aggm,index=c("niche overlap"),level="lower")
 }
 
 nstat<-lapply(nsplit,function(x){
@@ -616,8 +616,11 @@ nstat<-lapply(nsplit,function(x){
 names(nstat)<-c("Low","Medium","High")
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=3) + scale_fill_discrete("Resource Availability") + theme_bw()
-ggsave("Figures/NetworkStatistics.jpeg",height=9,width=6,dpi=600)
+nstat$L1<-factor(nstat$L1,c("Low","Medium","High"))
+levels(nstat$Metric)<-"Niche Overlap"
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.7) + facet_wrap(~Metric,scales='free',nrow=3) + scale_fill_discrete("Resource Availability") + theme_bw() + scale_fill_manual("Resource Availability",values=c("Grey80","Grey50","Black"))
+ggsave("Figures/NetworkStatistics.jpeg",height=4,width=6,dpi=600) 
 ```
 
 Compared to raw visits
@@ -625,14 +628,15 @@ Compared to raw visits
 sindat<-split(indat,indat$scaledR)
 ndat<-lapply(sindat,function(x){
   web<-acast(x[x$Yobs==1,],Hummingbird~Iplant_Double,value.var = "Yobs", fun= function(x){ length(unique(x))})
-  nstat<-t(networklevel(web,index=c("weighted connectance","weighted NODF","niche overlap"),level="lower"))
+  nstat<-t(networklevel(web,index=c("niche overlap"),level="lower"))
 })
 names(ndat)<-c("Low","Medium","High")
 ndat<-melt(ndat)
 
 colnames(ndat)<-c("Var1","Metric","value","L1")
 
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Resource Availability") + geom_vline(data=ndat,aes(xintercept=value,col=L1),linetype="dashed") + scale_color_discrete(guide='none')
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Resource Availability") + geom_vline(data=ndat,aes(xintercept=value,col=L1),linetype="dashed") + scale_color_discrete(guide='none') 
 ```
 
 ```{r}
