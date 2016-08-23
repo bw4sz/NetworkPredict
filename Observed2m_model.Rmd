@@ -118,7 +118,7 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=8,n.iter=400000,n.burnin=400000-4000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=8,n.iter=100,n.burnin=0,n.chains=2,DIC=F)
       )
   }
 ```
@@ -226,7 +226,7 @@ predL<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat[indat$R=="L
 
 predhl<-melt(list(High=predH,Medium=predM,Low=predL),id.vars=colnames(predH))
 
-colnames(predhl)[5]<-"BFlowerL"
+colnames(predhl)[6]<-"BFlowerL"
 
 predhl$BFlowerL<-factor(as.character(predhl$BFlowerL))
 levels(predhl$BFlowerL)<-c("Low","Medium","High")
