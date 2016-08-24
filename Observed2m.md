@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-08 21:17:24"
+## [1] "Run Completed at 2016-08-23 22:48:36"
 ```
 
 
@@ -43,26 +43,28 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
+int$timestamp<-as.POSIXct(paste(int$Time,int$DateP),format="%H:%M:%S %Y-%m-%d")
+
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
 #one duplicate camera error, perhaps two GPS records.
 int<-int[!(int$ID %in% "FH1108" & int$Date_F %in% '2014-12-01'),]
-int[int$Iplant_Double %in% "Onagaraceae fuschia",]<-"Fuchsia macrostigma"
 
 #Correct known taxonomic disagreements, atleast compared to traits
+int[int$Iplant_Double %in% "Onagaraceae fuschia","Iplant_Double"]<-"Fuchsia macrostigma"
 int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
 int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
 int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 25 points
+#Some reasonable level of presences, 10 points
 keep<-names(which(table(int$Hummingbird) > 10))
 
 int<-int[int$Hummingbird %in% keep & !int$Hummingbird %in% c("Sparkling Violetear"),]
 
-m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
+m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","timestamp","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
 
 #Does the data come from camera or transect?
 m.dat$Type<-(is.na(m.dat$TransectID))*1
@@ -198,6 +200,25 @@ datph$Survey_Type[!datph$Survey_Type %in% "Transect"]<-"Camera"
 
 datph<-datph[datph$Survey_Type=="Camera",]
 
+#time filter
+
+#sort by timestamp
+datph<-datph[order(datph$timestamp),]
+
+dotime<-function(d){
+  d$Timediff<-NA
+  if(nrow(d)>1){
+  for (x in 2:nrow(d)){
+  d$Timediff[x]<-difftime(d$timestamp[x],d$timestamp[x-1],units="mins")  
+  }
+  }
+  return(d)
+}
+
+datph<-datph %>% group_by(ID,Hummingbird) %>% do(dotime(.))
+
+#eliminate interaction by the same species within five minutes
+datph<-datph[!1:nrow(datph) %in% which(datph$Timediff<5),]
 #Day level
 #add day ID
 sdat<-split(datph,list(datph$ID),drop = T)
@@ -528,6 +549,24 @@ file.remove(list.files(pattern="*.log"))
 ```
 
 
+#Trait distributions
+
+
+```r
+fl<-merge(full.fl,fl.morph,by.x="Iplant_Double",by.y="Group.1")
+fll<-merge(fl,flower.month,by.y=c("Date_F","Transect_R"),by.x=c("Date_F","Transect_R"))
+
+#invert level order
+fll$R<-factor(fll$R,levels=rev(levels(fll$R)))
+ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.8) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("red","blue","grey50")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)")
+```
+
+<img src="figureObserved/unnamed-chunk-21-1.png" style="display: block; margin: auto;" />
+
+```r
+ggsave("Figures/TraitDensity.jpeg",height=3,width=6,dpi=500)
+```
+
 
 ```r
 gc()
@@ -535,8 +574,8 @@ gc()
 
 ```
 ##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1651513 88.3    2637877 140.9  2637877 140.9
-## Vcells 3967469 30.3    6946061  53.0  5721718  43.7
+## Ncells 1669744 89.2    2637877 140.9  2637877 140.9
+## Vcells 5211404 39.8    8415273  64.3  7919293  60.5
 ```
 
 ```r
