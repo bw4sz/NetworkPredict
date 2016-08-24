@@ -79,10 +79,10 @@ $$\mu_{\beta_2} \sim Normal(0,1.67)$$
 $$\mu_{\beta_3} \sim Normal(0,1.67)$$
 
 Group Level Variance
-$$\tau_{\alpha} \sim Half_cauchy(0,1,1)$$
-$$\tau_{\beta_1} \sim Half_cauchy(0,1,1)$$
-$$\tau_{\beta_2} \sim Half_cauchy(0,1,1)$$
-$$\tau_{\beta_3} \sim Half_cauchy(0,1,1)$$
+$$\tau_{\alpha} \sim Half cauchy(0,1,1)$$
+$$\tau_{\beta_1} \sim Half cauchy(0,1,1)$$
+$$\tau_{\beta_2} \sim Half cauchy(0,1,1)$$
+$$\tau_{\beta_3} \sim Half cauchy(0,1,1)$$
 
 ```{r,eval=T,strip.white=T}
 #Source model
