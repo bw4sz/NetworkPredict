@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-23 22:48:36"
+## [1] "Run Completed at 2016-08-24 21:42:39"
 ```
 
 
@@ -558,7 +558,7 @@ fll<-merge(fl,flower.month,by.y=c("Date_F","Transect_R"),by.x=c("Date_F","Transe
 
 #invert level order
 fll$R<-factor(fll$R,levels=rev(levels(fll$R)))
-ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.8) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("red","blue","grey50")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)")
+ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.7) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("Black","Grey50","grey80")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)")
 ```
 
 <img src="figureObserved/unnamed-chunk-21-1.png" style="display: block; margin: auto;" />
@@ -574,8 +574,8 @@ gc()
 
 ```
 ##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1669744 89.2    2637877 140.9  2637877 140.9
-## Vcells 5211404 39.8    8415273  64.3  7919293  60.5
+## Ncells 1669746 89.2    2637877 140.9  2637877 140.9
+## Vcells 5211418 39.8    8415273  64.3  7919160  60.5
 ```
 
 ```r
