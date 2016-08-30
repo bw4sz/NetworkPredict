@@ -1,6 +1,6 @@
 #!/bin/bash
 #cd into repo, if directory doesn't exist, kill the run.
-git clone git@github.com:bw4sz/NetworkPredict.git --depth 2
+git clone git@github.com:bw4sz/NetworkPredict.git --depth 1
 
 cd NetworkPredict||sudo halt
 
