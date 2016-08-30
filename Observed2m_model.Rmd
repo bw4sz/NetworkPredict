@@ -144,7 +144,7 @@ pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
+ggplot(pars_detect[pars_detect$par %in% c("alpha","beta1","beta2","beta3","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Species Level")
 ```
 
 ```{r,fig.height=12}
@@ -445,7 +445,7 @@ ggplot(b,aes(y=estimate,x=Hummingbird,fill=Total_Culmen)) + geom_violin() + coor
 #Estimated niche breadth
 
 ```{r}
-castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1","beta2","beta3","alpha"),], species +Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1","beta2","beta3","alpha","tauE"),], species +Chain + Draw~par,value.var="estimate")
 
 #Turn to 
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -545,7 +545,7 @@ makeR<-function(x){
 }
 
 nstat<-lapply(nsplit,function(x){
-  netstat<-melt(lapply(1:50,function(k) makeR(x)),id.vars=c("jBird","jPlant","Hummingbird","Traitmatch","Corolla","P"))
+  netstat<-melt(lapply(1:100,function(k) makeR(x)),id.vars=c("jBird","jPlant","Hummingbird","Traitmatch","Corolla","P"))
   colnames(netstat)[7]<-"Iteration"
   return(netstat)
 })
@@ -557,7 +557,14 @@ nstat<-melt(nstat,colnames(nstat[[1]]))
 Predicted density
 
 ```{r}
-ggplot(nstat[nstat$P==1,],aes(x=Corolla,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Hummingbird,scales='free',nrow=5) + scale_fill_discrete("Resource Availability") + theme_bw()
+#order the levels
+nstat$L1<-factor(nstat$L1,levels=c("High","Medium","Low"))
+
+#add level to hum.morph to match naming convention
+nstat<-merge(nstat,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
+
+ggplot(nstat[nstat$P>0,],aes(x=Corolla,fill=L1)) + geom_density(alpha=0.8) + facet_wrap(~Hummingbird,scales='free',ncol=4)  + theme_bw()+ scale_fill_manual("Resource Availability",values=c("Black","Grey40","Grey85"))  + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
+ggsave("Figures/PredictedDensity.jpeg",dpi=400,height=8,width=10)
 ```
 
 ```{r,fig.width=6,fig.height=10}
