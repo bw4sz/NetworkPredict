@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-24 21:42:39"
+## [1] "Run Completed at 2016-08-30 20:53:50"
 ```
 
 
@@ -127,13 +127,13 @@ head(elevH)
 ```
 
 ```
-##                 Hummingbird  Low        m   High Index
-## 1    White-whiskered Hermit 1340 1396.969 1532.0     1
-## 2            Andean Emerald 1378 1397.000 1380.0     1
-## 3    Stripe-throated Hermit 1368 1397.324 1454.2     1
-## 4 Rufous-tailed Hummingbird 1370 1430.636 1380.0     1
-## 5         Crowned Woodnymph 1360 1453.625 1527.8     1
-## 6  Wedge-billed Hummingbird 1331 1627.737 2006.0     3
+##                 Hummingbird    Low        m   High Index
+## 1    White-whiskered Hermit 1340.0 1396.969 1604.6     1
+## 2            Andean Emerald 1370.4 1397.000 1570.0     1
+## 3    Stripe-throated Hermit 1351.8 1397.324 1484.0     1
+## 4 Rufous-tailed Hummingbird 1368.5 1430.636 1690.0     1
+## 5         Crowned Woodnymph 1340.0 1453.625 2400.0     1
+## 6  Wedge-billed Hummingbird 1331.0 1627.737 2047.0     3
 ```
 
 ```r
@@ -574,8 +574,8 @@ gc()
 
 ```
 ##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1669746 89.2    2637877 140.9  2637877 140.9
-## Vcells 5211418 39.8    8415273  64.3  7919160  60.5
+## Ncells 1670193 89.2    3205452 171.2  3205452 171.2
+## Vcells 5369797 41.0    8415273  64.3  8415086  64.3
 ```
 
 ```r

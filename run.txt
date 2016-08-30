@@ -214,171 +214,13 @@ List of 2
  $ fig.width : num 7
  $ fig.height: num 6
 
-  |                                                                         |..............................                                   |  46%
-  ordinary text without R code
-
-  |                                                                         |...............................                                  |  48%
-label: unnamed-chunk-19 (with options) 
-List of 2
- $ fig.height: num 6
- $ fig.width : num 10
-
-  |                                                                         |................................                                 |  49%
-  ordinary text without R code
-
-  |                                                                         |................................                                 |  50%
-label: unnamed-chunk-20 (with options) 
-List of 3
- $ fig.height: num 10
- $ fig.width : num 11
- $ eval      : symbol T
-
-  |                                                                         |.................................                                |  51%
-  ordinary text without R code
-
-  |                                                                         |..................................                               |  52%
-label: unnamed-chunk-21 (with options) 
-List of 3
- $ fig.height: num 10
- $ fig.width : num 11
- $ eval      : symbol T
-
-  |                                                                         |...................................                              |  54%
-  ordinary text without R code
-
-  |                                                                         |....................................                             |  55%
-label: unnamed-chunk-22 (with options) 
-List of 3
- $ fig.height: num 11
- $ fig.width : num 10
- $ eval      : symbol F
-
-  |                                                                         |.....................................                            |  56%
-  ordinary text without R code
-
-  |                                                                         |.....................................                            |  58%
-label: unnamed-chunk-23
-  |                                                                         |......................................                           |  59%
-  ordinary text without R code
-
-  |                                                                         |.......................................                          |  60%
-label: unnamed-chunk-24
-  |                                                                         |........................................                         |  61%
-  ordinary text without R code
-
-  |                                                                         |.........................................                        |  62%
-label: unnamed-chunk-25 (with options) 
-List of 1
- $ eval: symbol T
-
-`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-  |                                                                         |.........................................                        |  64%
-  ordinary text without R code
-
-  |                                                                         |..........................................                       |  65%
-label: unnamed-chunk-26 (with options) 
-List of 1
- $ eval: symbol T
-
-`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-  |                                                                         |...........................................                      |  66%
-  ordinary text without R code
-
-  |                                                                         |............................................                     |  68%
-label: unnamed-chunk-27 (with options) 
-List of 2
- $ fig.height: num 7
- $ fig.width : num 8
-
-  |                                                                         |.............................................                    |  69%
-  ordinary text without R code
-
-  |                                                                         |..............................................                   |  70%
-label: unnamed-chunk-28 (with options) 
-List of 3
- $ fig.height: num 7
- $ fig.width : num 8
- $ eval      : symbol F
-
-  |                                                                         |..............................................                   |  71%
-  ordinary text without R code
-
-  |                                                                         |...............................................                  |  72%
-label: unnamed-chunk-29
-  |                                                                         |................................................                 |  74%
-  ordinary text without R code
-
-  |                                                                         |.................................................                |  75%
-label: unnamed-chunk-30
-  |                                                                         |..................................................               |  76%
-  ordinary text without R code
-
-  |                                                                         |..................................................               |  78%
-label: unnamed-chunk-31
-  |                                                                         |...................................................              |  79%
-  ordinary text without R code
-
-  |                                                                         |....................................................             |  80%
-label: unnamed-chunk-32
-  |                                                                         |.....................................................            |  81%
-  ordinary text without R code
-
-  |                                                                         |......................................................           |  82%
-label: unnamed-chunk-33
-  |                                                                         |......................................................           |  84%
-  ordinary text without R code
-
-  |                                                                         |.......................................................          |  85%
-label: unnamed-chunk-34 (with options) 
-List of 2
- $ fig.width : num 6
- $ fig.height: num 10
-
-  |                                                                         |........................................................         |  86%
-  ordinary text without R code
-
-  |                                                                         |.........................................................        |  88%
-label: unnamed-chunk-35
-  |                                                                         |..........................................................       |  89%
-  ordinary text without R code
-
-  |                                                                         |..........................................................       |  90%
-label: unnamed-chunk-36
-  |                                                                         |...........................................................      |  91%
-  ordinary text without R code
-
-  |                                                                         |............................................................     |  92%
-label: unnamed-chunk-37
-  |                                                                         |.............................................................    |  94%
-  ordinary text without R code
-
-  |                                                                         |..............................................................   |  95%
-label: unnamed-chunk-38
-Scale for 'fill' is already present. Adding another scale for 'fill',
-which will replace the existing scale.
-  |                                                                         |...............................................................  |  96%
-  ordinary text without R code
-
-  |                                                                         |...............................................................  |  98%
-label: unnamed-chunk-39
-  |                                                                         |................................................................ |  99%
-  ordinary text without R code
-
-  |                                                                         |.................................................................| 100%
-label: unnamed-chunk-40
-
-output file: Observed2m_model.knit.md
-
-/usr/bin/pandoc +RTS -K512m -RTS Observed2m_model.utf8.md --to html --from markdown+autolink_bare_uris+ascii_identifiers+tex_math_single_backslash --output Observed2m_model.html --smart --email-obfuscation none --self-contained --standalone --section-divs --template /home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/default.html --variable 'theme:bootstrap' --include-in-header /tmp/Rtmp5Uqmsx/rmarkdown-str5b93ab501f4.html --mathjax --variable 'mathjax-url:https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --no-highlight --variable highlightjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/highlight --variable navigationjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/navigation-1.0 
-
-Output created: Observed2m_model.html
-Warning messages:
+Quitting from lines 210-214 (Observed2m_model.Rmd) 
+Error in data.frame(alpha, beta1, beta2, beta3, tauE) : 
+  argument "tauE" is missing, with no default
+Calls: <Anonymous> ... withCallingHandlers -> withVisible -> eval -> eval -> trajF -> data.frame
+In addition: Warning messages:
 1: glm.fit: fitted rates numerically 0 occurred 
-2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  Model failed to converge with max|grad| = 0.00118704 (tol = 0.001, component 1)
+2: Removed 1 rows containing missing values (geom_path). 
 3: Removed 1 rows containing missing values (geom_path). 
-4: Removed 1 rows containing missing values (geom_path). 
-5: Removed 3328 rows containing missing values (geom_point). 
-6: Removed 3328 rows containing missing values (geom_point). 
-7: Removed 3328 rows containing missing values (geom_point). 
-8: Removed 3328 rows containing missing values (geom_point). 
+
+Execution halted
