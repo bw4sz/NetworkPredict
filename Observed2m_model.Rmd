@@ -118,19 +118,19 @@ Dat<-list(
   #MCMC options
   if(newModel){
     system.time(
-      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=10,n.iter=200000,n.burnin=195000,n.chains=2,DIC=F)
+      m2<-jags.parallel(data=Dat,parameters.to.save =ParsStage,inits=InitStage,model.file="Bayesian/NmixturePoissonRagged2m.jags",n.thin=10,n.iter=300000,n.burnin=295000,n.chains=2,DIC=F)
       )
   }
 ```
 
 ```{r,eval=F}
 #recompile if needed
-runs<-100000
+runs<-200000
 
 recompile(m2)
 
 if(!newModel){
-  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs-2000,n.thin=2))  
+  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs-5000,n.thin=10))  
 }
 
 ```
