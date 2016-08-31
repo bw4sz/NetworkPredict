@@ -384,13 +384,6 @@ ggsave("Figures/SpeciesDiscrepancy.jpeg",height=7,width=8)
 ```
 
 ```{r,eval=F}
-dmat<-pars_detect %>% filter(par %in% c("ynew","E")) %>% dcast(...~par,value.var="estimate") %>% group_by(ynew) %>% summarize(E=mean(E),lower=quantile(E,0.05),upper=quantile(E,0.95))
-
-ggplot(dmat,aes(x=Yobs,y=E,ymin=lower,ymax=upper)) + geom_point(size=4) + geom_linerange(alpha=0.5,size=1) + coord_flip() + labs(color="N-mixture Model",y="Average Discrepancy") + theme_bw()
-ggsave("Figures/SpeciesDiscrepancy.jpeg",height=7,width=8)
-```
-
-```{r,eval=F}
 sumsp<-pars_detect %>% filter(par == "E") %>% group_by(Draw,Chain,species) %>% summarize(fit=sum(estimate))
 ```
 
