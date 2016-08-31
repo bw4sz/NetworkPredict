@@ -1,0 +1,18 @@
+{
+    "contents" : "1 + -0.1 * .1 + 0*2 + 10 * .1 * 2\n",
+    "created" : 1471551163450.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "1918006810",
+    "id" : "5E5B6814",
+    "lastKnownWriteTime" : 5058721058002042880,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

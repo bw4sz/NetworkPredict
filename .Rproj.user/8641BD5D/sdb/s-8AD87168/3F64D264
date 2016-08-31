@@ -1,0 +1,18 @@
+{
+    "contents" : "predy<-trajF(alpha=-1.43,beta1=-0.056,trait=indat$Traitmatch,resources=scale(indat$All_Flowers),beta2=-0.11,beta3=0.001)\npredy2<-trajF(alpha=-1.43,beta1=-0.056,trait=indat$Traitmatch,resources=scale(indat$All_Flowers),beta2=0,beta3=0.001)\n\nggplot(data=predy,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.4,fill=\"red\")  +  theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\")  + geom_line(aes(y=mean)) + geom_line(data=predy2,aes(x=trait,y=mean),col=\"blue\")\n\n#Trajectories from posterior\npredH<-trajF(alpha=3.4066,beta1=-0.15,trait=indat[indat$BAll_Flowers==1,\"Traitmatch\"],resources=indat[indat$ BAll_Flowers==1,\"scaledR\"],beta2=-0.4,beta3=0.04)\n\npredL<-trajF(alpha=3.4066,beta1=-0.15,trait=indat[indat$BAll_Flowers==0,\"Traitmatch\"],resources=indat[indat$ BAll_Flowers==0,\"scaledR\"],beta2=-0.4,beta3=0.1)\n\npredhl<-melt(list(High=predH,Low=predL),id.vars=colnames(predH))\n\ncolnames(predhl)[5]<-\"BFlowerL\"\n\nindat$BFlowerL<-factor(as.character(indat$BAll_Flowers))\nlevels(indat$BFlowerL)<-c(\"Low\",\"High\")\n\nggplot(data=predhl,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=BFlowerL),alpha=0.2)  + geom_line(aes(y=mean,col=BFlowerL),size=.8) + theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\") + geom_point(data=mindat,aes(x=Traitmatch,y=value))+ labs(fill=\"Resource Availability\",col=\"Resource Availability\") \n\n\nm<-glm(data=a,Yobs>0~Traitmatch*scaledR,family=\"binomial\")\nsummary(m)\na$pred<-predict(m,type=\"response\")\nggplot(a,aes(x=Traitmatch)) + geom_point(aes(y=as.numeric(Yobs>0),col=as.factor(scaledR))) + geom_line(aes(y=pred,col=as.factor(BAll_Flowers)))\n",
+    "created" : 1468540912446.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3961290547",
+    "id" : "3F64D264",
+    "lastKnownWriteTime" : 1469221586,
+    "path" : "~/NetworkPredict/testplot.R",
+    "project_path" : "testplot.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

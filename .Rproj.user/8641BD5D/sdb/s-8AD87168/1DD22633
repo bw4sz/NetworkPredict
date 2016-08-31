@@ -1,0 +1,17 @@
+{
+    "contents" : "\nsink(\"Bayesian/NmixturePoissonRagged2m.jags\")\n\ncat(\"\n    model {\n    #Compute true state for each pair of birds and plants\n    for (i in 1:Birds){\n    for (j in 1:Plants){\n    for (k in 1:Times){\n    \n    #Process Model\n    log(rho[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k] + beta3[i] * resources[i,j,k] * Traitmatch[i,j] \n    \n    #True State\n    S[i,j,k] ~ dpois(rho[i,j,k])\n    }\n    }\n    }\n    \n    #Observation Model\n    for (x in 1:Nobs){\n    \n    #Observation Process for cameras\n    Yobs_camera[x] ~ dbin(detect[Bird[x]],S[Bird[x],Plant[x],Time[x]])    \n\n    #     #Assess Model Fit - Posterior predictive check\n    # \n    #     #Fit discrepancy statistics\n         #Camera\n         eval_cam[x]<-detect[Bird[x]]*S[Bird[x],Plant[x],Time[x]]\n         E[x]<-pow((Yobs_camera[x]-eval_cam[x]),2)/(eval_cam[x]+0.5)\n    #     \n         ynew_cam[x]~dbin(detect[Bird[x]], S[Bird[x],Plant[x],Time[x]])\n         E.new[x]<-pow((ynew_cam[x]-eval_cam[x]),2)/(eval_cam[x]+0.5)\n    }\n    \n    #Priors\n    #Observation model\n    #Detect priors, logit transformed - Following lunn 2012 p85\n    \n    for(x in 1:Birds){\n    #For Cameras\n    logit(detect[x])<-dcam[x]\n    dcam[x]~dnorm(omega_mu,omega_tau)\n    }\n    \n    \n    #Process Model\n    #Species level priors\n    for (i in 1:Birds){\n    \n    #Intercept\n    #logit prior, then transform for plotting\n    alpha[i] ~ dnorm(alpha_mu,alpha_tau)\n    \n    #Traits slope \n    beta1[i] ~ dnorm(beta1_mu,beta1_tau)    \n    \n    #Plant slope\n    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    \n    \n    #Interaction slope\n    beta3[i] ~ dnorm(beta3_mu,beta3_tau)\n\n    }\n    \n    #OBSERVATION PRIOR\n    omega_mu ~ dnorm(0,0.386)\n    omega_tau ~ dunif(0,10)\n    \n    #Group process priors\n    \n    #Intercept \n    alpha_mu ~ dnorm(0,0.386)\n    alpha_tau ~ dt(0,1,1)I(0,)\n    alpha_sigma<-pow(1/alpha_tau,0.5) \n    \n    #Trait\n    beta1_mu~dnorm(0,0.386)\n    beta1_tau ~ dt(0,1,1)I(0,)\n    beta1_sigma<-pow(1/beta1_tau,0.5)\n    \n    #Resources\n    beta2_mu~dnorm(0,0.386)\n    beta2_tau ~ dt(0,1,1)I(0,)\n    beta2_sigma<-pow(1/beta2_tau,0.5)\n    \n    #Interaction\n    beta3_mu~dnorm(0,0.386)\n    beta3_tau ~ dt(0,1,1)I(0,)\n    beta3_sigma<-pow(1/beta3_tau,0.5)\n\n    #derived posterior check\n    fit<-sum(E[]) #Discrepancy for the observed data\n    fitnew<-sum(E.new[])\n    \n    }\n    \",fill=TRUE)\n\nsink()\n",
+    "created" : 1460987733644.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1361972056",
+    "id" : "1DD22633",
+    "lastKnownWriteTime" : 1472582512,
+    "path" : "~/NetworkPredict/Bayesian/NmixturePoissonRagged2m.R",
+    "project_path" : "Bayesian/NmixturePoissonRagged2m.R",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
