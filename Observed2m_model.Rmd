@@ -51,13 +51,19 @@ indat$pred<-predict(m,type="response")
 ggplot(indat,aes(x=Traitmatch)) + geom_point(aes(y=Yobs)) + geom_line(aes(y=pred,col=as.factor(R)))
 ```
 
+
+```{r}
+#add index for plotting
+indat$Index<-1:nrow(indat)
+```
+
 #Hierarchical Model
 
 For hummingbird species i feeding on plant species j observed at time k and sampling event observed by transect (YTransect) or camera (YCamera)
 
 Observation Model:
 
-$$ Yobs_{i,j,k,d} \sim Binomial(N_{i,j,k},\phi) $$
+$$ Yobs_{i,j,k,d} \sim Binomial(N_{i,j,k},\omega) $$
 
 Process Model:
 
@@ -99,7 +105,7 @@ InitStage <- function(){
 list(S=initY,dcam=initB)}
 
 #Parameters to track
-ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","detect","E","fit","fitnew")
+ParsStage <- c("alpha","beta1","beta2","beta3","alpha_mu","alpha_sigma","beta1_sigma","beta1_mu","beta2_mu","beta2_sigma","beta3_mu","beta3_sigma","detect","E","E.new","fit","fitnew")
 
 
 #Jags Data
@@ -125,12 +131,12 @@ Dat<-list(
 
 ```{r,eval=F}
 #recompile if needed
-runs<-200000
+runs<-100
 
 recompile(m2)
 
 if(!newModel){
-  system.time(m2<-update(m2,n.iter=runs,n.burnin=runs-5000,n.thin=10))  
+  system.time(m2<-update(m2,n.iter=runs,n.burnin=0,n.thin=1))  
 }
 
 ```
@@ -317,8 +323,8 @@ indat$rplot<-as.factor(indat$scaledR)
 levels(indat$rplot)<-c("Low","Medium","High")
 spe$resources<-as.factor(spe$resources)
 levels(spe$resources)<-c("Low","Medium","High")
-ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=resources),alpha=0.5) + geom_line(aes(y=mean,group=resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=1.2) + scale_fill_manual("Resource Availability",values=c("Grey70","Grey40","Black"))
-ggsave("Figures/SpeciesRegression.jpeg",height=7,width=11)
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=resources),alpha=0.5) + geom_line(aes(y=mean,group=resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length (cm)") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=1.2) + scale_fill_manual("Resource Availability",values=c("Grey70","Grey40","Black"))
+ggsave("Figures/SpeciesRegression.jpeg",height=7,width=12)
 
 ```
 
@@ -366,6 +372,26 @@ These plots can be tricky to interpret if one forgets that trait matching as a c
 ```{r}
 smat<-pars_detect %>% filter(par=="E") %>% group_by(species) %>% summarize(fit=sum(estimate)) %>% arrange(desc(fit))
 smat<-merge(smat,jagsIndexBird,by.x="species",by.y="jBird")
+```
+
+### Posterior predictive checks by species
+
+```{r}
+dmat<-pars_detect %>% filter(par == "E")  %>% group_by(Hummingbird) %>% summarize(E=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+
+ggplot(dmat,aes(x=Hummingbird,y=E,ymin=lower,ymax=upper)) + geom_point(size=4) + geom_linerange(alpha=0.5,size=1) + coord_flip() + labs(color="N-mixture Model",y="Average Discrepancy") + theme_bw()
+ggsave("Figures/SpeciesDiscrepancy.jpeg",height=7,width=8)
+```
+
+```{r,eval=F}
+dmat<-pars_detect %>% filter(par %in% c("ynew","E")) %>% dcast(...~par,value.var="estimate") %>% group_by(ynew) %>% summarize(E=mean(E),lower=quantile(E,0.05),upper=quantile(E,0.95))
+
+ggplot(dmat,aes(x=Yobs,y=E,ymin=lower,ymax=upper)) + geom_point(size=4) + geom_linerange(alpha=0.5,size=1) + coord_flip() + labs(color="N-mixture Model",y="Average Discrepancy") + theme_bw()
+ggsave("Figures/SpeciesDiscrepancy.jpeg",height=7,width=8)
+```
+
+```{r,eval=F}
+sumsp<-pars_detect %>% filter(par == "E") %>% group_by(Draw,Chain,species) %>% summarize(fit=sum(estimate))
 ```
 
 ## Discrepancy matrix
@@ -563,8 +589,8 @@ nstat$L1<-factor(nstat$L1,levels=c("High","Medium","Low"))
 #add level to hum.morph to match naming convention
 nstat<-merge(nstat,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-ggplot(nstat[nstat$P>0,],aes(x=Corolla,fill=L1)) + geom_density(alpha=0.8) + facet_wrap(~Hummingbird,scales='free',ncol=4)  + theme_bw()+ scale_fill_manual("Resource Availability",values=c("Black","Grey40","Grey85"))  + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
-ggsave("Figures/PredictedDensity.jpeg",dpi=400,height=8,width=10)
+ggplot(nstat[nstat$P>0,],aes(x=Corolla,fill=L1)) + geom_density(alpha=0.8) + facet_wrap(~Hummingbird,scales='free',ncol=4)  + theme_bw()+ scale_fill_manual("Resource Availability",values=c("Black","Grey40","Grey85"))  + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + xlab("Corolla Length (mm)")
+ggsave("Figures/PredictedDensity.jpeg",dpi=400,height=7,width=11)
 ```
 
 ```{r,fig.width=6,fig.height=10}
