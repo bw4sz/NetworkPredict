@@ -460,6 +460,11 @@ sflowers<-flower.month %>% group_by(Transect_R,Month,Year) %>% summarize(Flowers
 sflowers$R<-cut(sflowers$Flowers,breaks=c(0,quantile(sflowers$Flowers,0.33),quantile(sflowers$Flowers,0.66),max(sflowers$Flowers)),label=c("Low","Medium","High"))
  
 indat<-merge(indat,sflowers,c("Transect_R","Month","Year"))
+
+#plot results by 
+ms<-melt(table(sflowers$R,sflowers$Transect_R))
+
+ggplot(ms,aes(x=Var2,y=value,col=Var1)) + geom_point(size=4) + labs(x="Elevation Range",y="Months",col="Resource Range") + scale_y_continuous(limits =c(0,20)) + theme_bw()
 ```
 
 ```{r}
@@ -545,10 +550,13 @@ fll<-merge(fl,flower.month,by.y=c("Date_F","Transect_R"),by.x=c("Date_F","Transe
 
 #invert level order
 fll$R<-factor(fll$R,levels=rev(levels(fll$R)))
-ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.7) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("Black","Grey50","grey80")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)")
+
+levels(fll$Transect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900m - 2100m","2100m - 2300m","2300m - 2500m")
+
+ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.8) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("Black","Grey40","grey90")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)") + facet_wrap(~Transect_R,scales="free")
 
 
-ggsave("Figures/TraitDensity.jpeg",height=3,width=6,dpi=500)
+ggsave("Figures/TraitDensity.jpeg",height=4,width=8,dpi=500)
 ```
 
 ```{r}
