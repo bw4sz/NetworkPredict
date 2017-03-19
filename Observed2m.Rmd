@@ -556,7 +556,7 @@ levels(fll$Transect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900
 ggplot(fll,aes(x=Corolla,fill=R)) + geom_density(alpha=0.8) + scale_fill_manual(labels=c("High","Medium","Low"),values=c("Black","Grey40","grey90")) + labs(fill="Resource Availability") + theme_bw() + labs(x="Corolla Length (mm)") + facet_wrap(~Transect_R,scales="free")
 
 
-ggsave("Figures/TraitDensity.jpeg",height=4,width=8,dpi=500)
+ggsave("Figures/TraitDensity.svg",height=5,width=10,dpi=300)
 ```
 
 ```{r}

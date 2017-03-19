@@ -323,8 +323,8 @@ indat$rplot<-as.factor(indat$scaledR)
 levels(indat$rplot)<-c("Low","Medium","High")
 spe$resources<-as.factor(spe$resources)
 levels(spe$resources)<-c("Low","Medium","High")
-ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=resources),alpha=0.5) + geom_line(aes(y=mean,group=resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length (mm)") + facet_wrap(~Hummingbird,scales="free",ncol=4) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=1.2) + scale_fill_manual("Resource Availability",values=c("Grey70","Grey40","Black"))
-ggsave("Figures/SpeciesRegression.jpeg",height=9,width=12)
+ggplot(data=spe,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=resources),alpha=0.5) + geom_line(aes(y=mean,group=resources),size=.5) + theme_bw() + ylab("Daily Interaction Rate")+ xlab("Difference between Bill and Corolla Length (mm)") + facet_wrap(~Hummingbird,scales="free",ncol=3) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=1.2) + scale_fill_manual("Resource \nAvailability",values=c("Grey70","Grey40","Black"))
+ggsave("Figures/SpeciesRegression.jpeg",height=11,width=10)
 
 ```
 
